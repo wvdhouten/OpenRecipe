@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "OpenCookbook.RecipeSerializer": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "DOTNET_ENVIRONMENT": "Development"
+      }
+    }
+  }
+}
