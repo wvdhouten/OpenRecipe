@@ -3,17 +3,20 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.8.34330.188
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OpenCookbook.RecipeEditor", "OpenCookbook.RecipeEditor\OpenCookbook.RecipeEditor.csproj", "{901D5135-D635-4F22-B844-C4994452DFCC}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OpenRecipe.RecipeEditor", "src\OpenRecipe.RecipeEditor\OpenRecipe.RecipeEditor.csproj", "{901D5135-D635-4F22-B844-C4994452DFCC}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OpenCookbook.Models", "OpenCookbook.Models\OpenCookbook.Models.csproj", "{2BC22C94-BFA4-4E57-BBD8-F4BBFC78872E}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OpenCookbook.Core", "OpenCookbook.Core\OpenCookbook.Core.csproj", "{99051183-CD04-4ABD-AF1A-F2C7089D192A}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OpenCookbook.Domain", "OpenCookbook.Domain\OpenCookbook.Domain.csproj", "{8407CAAD-C51E-4D58-AFC6-6E960E13B08B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OpenRecipe", "src\OpenRecipe\OpenRecipe.csproj", "{2BC22C94-BFA4-4E57-BBD8-F4BBFC78872E}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{62E73510-B885-4726-A25F-1D89446ED1DD}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OpenCookbook.Tests", "OpenCookbook.Tests\OpenCookbook.Tests.csproj", "{F0B23670-577D-4E13-AED7-EB5F70CD08F6}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OpenRecipe.Tests", "test\OpenRecipe.Tests\OpenRecipe.Tests.csproj", "{F0B23670-577D-4E13-AED7-EB5F70CD08F6}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{A854F8A3-17C3-4E44-B6E5-FECAF88B3E48}"
+	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OpenRecipe.Elements", "src\OpenRecipe.Elements\OpenRecipe.Elements.csproj", "{E97FABC8-E87C-44B0-B0A6-A3EE9206499E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -29,18 +32,14 @@ Global
 		{2BC22C94-BFA4-4E57-BBD8-F4BBFC78872E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2BC22C94-BFA4-4E57-BBD8-F4BBFC78872E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2BC22C94-BFA4-4E57-BBD8-F4BBFC78872E}.Release|Any CPU.Build.0 = Release|Any CPU
-		{99051183-CD04-4ABD-AF1A-F2C7089D192A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{99051183-CD04-4ABD-AF1A-F2C7089D192A}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{99051183-CD04-4ABD-AF1A-F2C7089D192A}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{99051183-CD04-4ABD-AF1A-F2C7089D192A}.Release|Any CPU.Build.0 = Release|Any CPU
-		{8407CAAD-C51E-4D58-AFC6-6E960E13B08B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{8407CAAD-C51E-4D58-AFC6-6E960E13B08B}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{8407CAAD-C51E-4D58-AFC6-6E960E13B08B}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{8407CAAD-C51E-4D58-AFC6-6E960E13B08B}.Release|Any CPU.Build.0 = Release|Any CPU
 		{F0B23670-577D-4E13-AED7-EB5F70CD08F6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{F0B23670-577D-4E13-AED7-EB5F70CD08F6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F0B23670-577D-4E13-AED7-EB5F70CD08F6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F0B23670-577D-4E13-AED7-EB5F70CD08F6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E97FABC8-E87C-44B0-B0A6-A3EE9206499E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E97FABC8-E87C-44B0-B0A6-A3EE9206499E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E97FABC8-E87C-44B0-B0A6-A3EE9206499E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E97FABC8-E87C-44B0-B0A6-A3EE9206499E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

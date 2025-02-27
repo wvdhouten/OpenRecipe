@@ -1,9 +1,10 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using OpenCookbook.Core;
-using OpenCookbook.Domain.Serialization;
+using OpenCookbook.RecipeEditor;
+using OpenRecipe.Domain.Serialization;
+using OpenRecipe.Serialization;
 
-namespace OpenCookbook.RecipeEditor
+namespace OpenRecipe.RecipeEditor
 {
     internal static class Program
     {
@@ -20,9 +21,7 @@ namespace OpenCookbook.RecipeEditor
             CurrentHost = Host.CreateDefaultBuilder()
                 .ConfigureServices((context, services) =>
                 {
-                    services.Configure<UserPreferences>(context.Configuration);
                     services.AddScoped<RecipeSerializer>();
-                    services.AddScoped<FileManager>();
 
                     services.AddScoped<RecipeForm>();
                 })

@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net8.0-windows</TargetFramework>
+    <TargetFramework>net9.0-windows7.0</TargetFramework>
     <Nullable>enable</Nullable>
     <UseWindowsForms>true</UseWindowsForms>
     <ImplicitUsings>enable</ImplicitUsings>
@@ -15,9 +15,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\OpenCookbook.Core\OpenCookbook.Core.csproj" />
-    <ProjectReference Include="..\OpenCookbook.Domain\OpenCookbook.Domain.csproj" />
-    <ProjectReference Include="..\OpenCookbook.Models\OpenCookbook.Models.csproj" />
+    <ProjectReference Include="..\OpenRecipe\OpenRecipe.csproj" />
   </ItemGroup>
 
 </Project>
