@@ -396,3 +396,4 @@ FodyWeavers.xsd
 
 # JetBrains Rider
 *.sln.iml
+/OpenRecipe.WebEditor/wwwroot/lib/bootstrap
