@@ -3,8 +3,6 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.8.34330.188
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OpenRecipe.RecipeEditor", "src\OpenRecipe.RecipeEditor\OpenRecipe.RecipeEditor.csproj", "{901D5135-D635-4F22-B844-C4994452DFCC}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OpenRecipe", "src\OpenRecipe\OpenRecipe.csproj", "{2BC22C94-BFA4-4E57-BBD8-F4BBFC78872E}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{62E73510-B885-4726-A25F-1D89446ED1DD}"
@@ -18,16 +16,14 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OpenRecipe.Elements", "src\OpenRecipe.Elements\OpenRecipe.Elements.csproj", "{E97FABC8-E87C-44B0-B0A6-A3EE9206499E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OpenRecipe.WebEditor", "OpenRecipe.WebEditor\OpenRecipe.WebEditor.csproj", "{F412511A-70E6-4AEA-BD81-E133CD9A7600}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{901D5135-D635-4F22-B844-C4994452DFCC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{901D5135-D635-4F22-B844-C4994452DFCC}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{901D5135-D635-4F22-B844-C4994452DFCC}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{901D5135-D635-4F22-B844-C4994452DFCC}.Release|Any CPU.Build.0 = Release|Any CPU
 		{2BC22C94-BFA4-4E57-BBD8-F4BBFC78872E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{2BC22C94-BFA4-4E57-BBD8-F4BBFC78872E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2BC22C94-BFA4-4E57-BBD8-F4BBFC78872E}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -40,6 +36,10 @@ Global
 		{E97FABC8-E87C-44B0-B0A6-A3EE9206499E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E97FABC8-E87C-44B0-B0A6-A3EE9206499E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E97FABC8-E87C-44B0-B0A6-A3EE9206499E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F412511A-70E6-4AEA-BD81-E133CD9A7600}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F412511A-70E6-4AEA-BD81-E133CD9A7600}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F412511A-70E6-4AEA-BD81-E133CD9A7600}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F412511A-70E6-4AEA-BD81-E133CD9A7600}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

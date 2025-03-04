@@ -33,7 +33,7 @@ public class Recipe
     /// <summary>
     /// Gets or sets the cooking time in minutes.
     /// </summary>
-    public int? CookingTime { get; set; }
+    public int? CookTime { get; set; }
 
     /// <summary>
     /// Gets or sets the list of ingredients required for the recipe.

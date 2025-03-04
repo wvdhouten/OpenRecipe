@@ -31,5 +31,5 @@ public class Ingredient
     /// <summary>
     /// Gets or sets the notes associated with the ingredient.
     /// </summary>
-    public IEnumerable<string> Notes { get; set; } = [];
+    public IList<string> Notes { get; set; } = [];
 }

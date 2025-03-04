@@ -1,0 +1,389 @@
+﻿@using OpenRecipe
+@using OpenRecipe.Serialization
+@using System.IO
+@inject IJSRuntime JS
+@page "/"
+
+<script>
+    window.downloadFile = async (fileName, contentStreamReference) => {
+    const arrayBuffer = await contentStreamReference.arrayBuffer();
+    const blob = new Blob([arrayBuffer]);
+    const url = URL.createObjectURL(blob);
+    const anchorElement = document.createElement('a');
+    anchorElement.href = url;
+    anchorElement.download = fileName ?? '';
+    anchorElement.click();
+    anchorElement.remove();
+    URL.revokeObjectURL(url);
+    }
+</script>
+
+<PageTitle>Open Recipe Editor</PageTitle>
+
+<h1>
+    <span>Recipe Editor</span>
+    <span>
+        <label for="file" class="btn btn-secondary">Load</label>
+        <InputFile id="file" OnChange="LoadFile" hidden />
+    </span>
+</h1>
+
+<div class="row mb-2">
+
+</div>
+
+<EditForm Model="@recipe" OnValidSubmit="HandleValidSubmit" class="form-horizontal">
+    <div class="row mb-2">
+        <div class="col">
+            <div class="form-floating">
+                <input type="text" class="form-control" id="name" @bind="recipe.Name" placeholder="">
+                <label for="name">Name</label>
+            </div>
+        </div>
+    </div>
+    <div class="row mb-2">
+        <div class="col">
+            <div class="form-floating">
+                <textarea class="form-control" id="description" @bind="recipe.Description" placeholder=""></textarea>
+                <label for="description">Description</label>
+            </div>
+        </div>
+    </div>
+    <div class="row mb-2">
+        <div class="col">
+            <div class="form-floating">
+                <input type="text" class="form-control" id="source" @bind="recipe.Source" placeholder="" />
+                <label for="source">Source</label>
+            </div>
+        </div>
+    </div>
+    <div class="row mb-2">
+        <div class="col">
+            <div class="form-floating">
+                <input type="number" class="form-control" id="servings" @bind="recipe.Servings" placeholder="" required />
+                <label for="source">Servings</label>
+            </div>
+        </div>
+        <div class="col">
+            <div class="form-floating">
+                <input type="number" class="form-control" id="prep-time" @bind="recipe.PrepTime" placeholder="" />
+                <label for="source">Preparation time</label>
+            </div>
+        </div>
+        <div class="col">
+            <div class="form-floating">
+                <input type="number" class="form-control" id="cook-time" @bind="recipe.CookTime" placeholder="" />
+                <label for="source">Cooking time</label>
+            </div>
+        </div>
+    </div>
+    <fieldset class="row mb-2">
+        <legend>Tags</legend>
+        <div>
+            @for (int i = 0; i < recipe.Tags.Count; i++)
+            {
+                var index = i;
+                <div class="btn-group mb-2 me-2">
+                    <div class="input-group-text">@recipe.Tags[index]</div>
+                    <button type="button" class="btn btn-danger" @onclick="() => RemoveTag(index)">&times;</button>
+                </div>
+            }
+        </div>
+        <div class="input-group">
+            <div class="form-floating">
+                <input type="text" class="form-control" id="new-tag" @bind="newTag" placeholder="" />
+                <label for="new-tag">Tag</label>
+            </div>
+            <button type="button" class="btn btn-success" @onclick="AddTag">+</button>
+        </div>
+    </fieldset>
+    <fieldset class="mb-2">
+        <legend>Ingredients</legend>
+        @foreach (var ingredient in recipe.Ingredients)
+        {
+            <div class="row mb-2">
+                <div class="input-group">
+                    <div class="form-floating">
+                        <input type="text" class="form-control" id="ingredient-name" @bind="ingredient.Name" placeholder="" />
+                        <label for="ingredient-name">Name</label>
+                    </div>
+                    <div class="form-floating">
+                        <input type="number" class="form-control" id="ingredient-quantity" @bind="ingredient.Quantity" placeholder="" />
+                        <label for="ingredient-quantity">Quantity</label>
+                    </div>
+                    <div class="form-floating">
+                        <input type="text" class="form-control" id="ingredient-unit" @bind="ingredient.Unit" placeholder="" />
+                        <label for="ingredient-unit">Unit</label>
+                    </div>
+                    <div class="input-group-text">
+                        <div class="form-check">
+                            <input id="ingredient-isScaling" type="checkbox" @bind="ingredient.IsScaling" class="form-check-input" />
+                            <label for="ingredient-isScaling" class="form-check-label">Scaling</label>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-success" @onclick="() => AddNote(ingredient)">+ Note</button>
+                    <button type="button" class="btn btn-danger" @onclick="() => RemoveIngredient(ingredient)">&times;</button>
+                </div>
+            </div>
+            @for (int i = 0; i < ingredient.Notes.Count; i++)
+            {
+                var index = i;
+                <div class="row mb-2">
+                    <div class="input-group">
+                        <div class="form-floating">
+                            <input type="text" class="form-control" id="note-value" @bind="ingredient.Notes[index]" placeholder="" />
+                            <label for="note-value">Note</label>
+                        </div>
+                        <button type="button" class="btn btn-danger" @onclick="() => RemoveNote(ingredient, index)">&times;</button>
+                    </div>
+                </div>
+            }
+        }
+        <div class="input-group">
+            <div class="form-floating">
+                <input type="text" class="form-control" id="new-ingredient" @bind="newIngredient" placeholder="" />
+                <label for="new-ingredient">Ingredient</label>
+            </div>
+            <button type="button" class="btn btn-success" @onclick="AddIngredient">+</button>
+        </div>
+    </fieldset>
+    <fieldset class="mb-2">
+        <legend>Utilities</legend>
+        @for (int i = 0; i < recipe.Utilities.Count; i++)
+        {
+            var index = i;
+            <div class="row mb-2">
+                <div class="input-group">
+                    <div class="form-floating">
+                        <input type="text" class="form-control" id="utility-value" @bind="recipe.Utilities[index]" placeholder="" />
+                        <label for="utility-value">Utility</label>
+                    </div>
+                    <button type="button" class="btn btn-danger" @onclick="() => RemoveUtility(index)">&times;</button>
+                </div>
+            </div>
+        }
+        <div class="input-group">
+            <div class="form-floating">
+                <input type="text" class="form-control" id="new-utility" @bind="newUtility" placeholder="" />
+                <label for="new-utility">Utility</label>
+            </div>
+            <button type="button" class="btn btn-success" @onclick="AddUtility">+</button>
+        </div>
+    </fieldset>
+    <fieldset class="mb-2">
+        <legend>Instructions</legend>
+        @for (int i = 0; i < recipe.Instructions.Count; i++)
+        {
+            var index = i;
+            <div class="row mb-2">
+                <div class="input-group">
+                    <div class="form-floating">
+                        <input type="text" class="form-control" id="instruction-value" @bind="recipe.Instructions[index]" placeholder="" />
+                        <label for="instruction-value">Note</label>
+                    </div>
+                    <button type="button" class="btn btn-danger" @onclick="() => RemoveInstruction(index)">&times;</button>
+                </div>
+            </div>
+        }
+        <div class="input-group">
+            <div class="form-floating">
+                <input type="text" class="form-control" id="new-instruction" @bind="newInstruction" placeholder="" />
+                <label for="new-instruction">Instruction</label>
+            </div>
+            <button type="button" class="btn btn-success" @onclick="AddInstruction">+</button>
+        </div>
+    </fieldset>
+    <fieldset class="mb-2">
+        <legend>Notes</legend>
+        @for (int i = 0; i < recipe.Notes.Count; i++)
+        {
+            var index = i;
+            <div class="row mb-2">
+                <div class="input-group">
+                    <div class="form-floating">
+                        <input type="text" class="form-control" id="note-value" @bind="recipe.Notes[index]" placeholder="" />
+                        <label for="note-value">Note</label>
+                    </div>
+                    <button type="button" class="btn btn-danger" @onclick="() => RemoveNote(index)">&times;</button>
+                </div>
+            </div>
+        }
+        <div class="input-group">
+            <div class="form-floating">
+                <input type="text" class="form-control" id="new-note" @bind="newNote" placeholder="" />
+                <label for="new-note">Note</label>
+            </div>
+            <button type="button" class="btn btn-success" @onclick="AddNote">+</button>
+        </div>
+    </fieldset>
+    <div class="row">
+        <div class="col-auto">
+            <button type="reset" class="btn btn-default">Reset</button>
+        </div>
+        <div class="col">
+            <button type="button" class="btn btn-secondary" @onclick="DownloadRecipe">Download</button>
+        </div>
+        <div class="col">
+            <button type="submit" class="btn btn-primary">Save</button>
+        </div>
+    </div>
+</EditForm>
+
+@code {
+    private Recipe recipe = new Recipe();
+
+    private string serializedRecipe = string.Empty;
+
+    private Task HandleValidSubmit()
+    {
+        serializedRecipe = RecipeSerializer.Serialize(recipe);
+
+        return Task.CompletedTask;
+    }
+
+    #region Ingredients
+
+    private string newIngredient = string.Empty;
+
+    private void AddIngredient()
+    {
+        if (string.IsNullOrWhiteSpace(newIngredient))
+            return;
+
+        recipe.Ingredients.Add(new Ingredient { Name = newIngredient.Trim() });
+        newIngredient = string.Empty;
+    }
+
+    private void RemoveIngredient(Ingredient ingredient)
+    {
+        recipe.Ingredients.Remove(ingredient);
+    }
+
+    #endregion
+
+    #region IngredientNotes
+
+    private void AddNote(Ingredient ingredient)
+    {
+        ingredient.Notes.Add(string.Empty);
+    }
+
+    private void RemoveNote(Ingredient ingredient, int index)
+    {
+        ingredient.Notes.RemoveAt(index);
+    }
+
+    #endregion
+
+    #region Utilities
+
+    private string newUtility = string.Empty;
+
+    private void AddUtility()
+    {
+        if (string.IsNullOrWhiteSpace(newUtility))
+            return;
+
+        recipe.Utilities.Add(newUtility.Trim());
+        newUtility = string.Empty;
+    }
+
+    private void RemoveUtility(int index)
+    {
+        recipe.Utilities.RemoveAt(index);
+    }
+
+    #endregion
+
+    #region Instructions
+
+    private string newInstruction = string.Empty;
+
+    private void AddInstruction()
+    {
+        if (string.IsNullOrWhiteSpace(newInstruction.Trim()))
+            return;
+
+        recipe.Instructions.Add(newInstruction.Trim());
+        newInstruction = string.Empty;
+    }
+
+    private void RemoveInstruction(int index)
+    {
+        recipe.Instructions.RemoveAt(index);
+    }
+
+    #endregion
+
+    #region Tags
+
+    private string newTag = string.Empty;
+
+    private void AddTag()
+    {
+        if (string.IsNullOrWhiteSpace(newTag))
+            return;
+
+        recipe.Tags.Add(newTag.Trim());
+        newTag = string.Empty;
+    }
+
+    private void RemoveTag(int index)
+    {
+        recipe.Tags.RemoveAt(index);
+    }
+
+    #endregion
+
+    #region Notes
+
+    private string newNote = string.Empty;
+
+    private void AddNote()
+    {
+        if (string.IsNullOrWhiteSpace(newNote))
+            return;
+
+        recipe.Notes.Add(newNote.Trim());
+        newNote = string.Empty;
+    }
+
+    private void RemoveNote(int index)
+    {
+        recipe.Notes.RemoveAt(index);
+    }
+
+    #endregion
+
+    #region Interaction
+
+    private async Task LoadFile(InputFileChangeEventArgs e)
+    {
+        serializedRecipe = await new StreamContent(e.File.OpenReadStream()).ReadAsStringAsync();
+        recipe = RecipeSerializer.Deserialize(serializedRecipe);
+    }
+
+    private Stream GetFileStream()
+    {
+        serializedRecipe = RecipeSerializer.Serialize(recipe);
+        var stream = new MemoryStream();
+        var writer = new StreamWriter(stream) { AutoFlush = true };
+        writer.Write(serializedRecipe);
+        stream.Position = 0;
+
+        return stream;
+    }
+
+    private async Task DownloadRecipe()
+    {
+        var id = Ulid.NewUlid();
+        var fileStream = GetFileStream();
+        var fileName = $"{id}.yuml";
+
+        using var streamRef = new DotNetStreamReference(stream: fileStream);
+
+        await JS.InvokeVoidAsync("downloadFile", fileName, streamRef);
+    }
+
+    #endregion
+}
