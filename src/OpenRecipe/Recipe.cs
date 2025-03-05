@@ -64,4 +64,9 @@ public class Recipe
     /// Gets or sets the list of notes for the recipe.
     /// </summary>
     public IList<string> Notes { get; set; } = [];
+
+    /// <summary>
+    /// Gets or sets a dictionary of extra data.
+    /// </summary>
+    public IDictionary<string, string> ExtraData { get; set; } = new Dictionary<string, string>();
 }

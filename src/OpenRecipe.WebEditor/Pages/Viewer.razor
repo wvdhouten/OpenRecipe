@@ -1,0 +1,66 @@
+﻿@using OpenRecipe.Serialization
+@page "/viewer"
+
+<PageTitle>Recipe Viewer</PageTitle>
+<h2>
+    <span>Recipe Viewer</span>
+    <span>
+        <label for="file" class="btn btn-secondary">Load</label>
+        <InputFile id="file" OnChange="LoadFile" hidden />
+    </span>
+</h2>
+@if (recipe != null)
+{
+    <article>
+        <header>
+            <h1>@recipe.Name</h1>
+            <h6>@recipe.Description</h6>
+            <div>
+                <span>Preparation Time: @recipe.PrepTime</span>
+                <span>Cooking Time: @recipe.CookTime</span>
+                <span>Servings: @recipe.Servings</span>
+            </div>
+        </header>
+        <section>
+            <h2>Ingredients</h2>
+            <ul>
+                @foreach (var ingredient in recipe.Ingredients)
+                {
+                    <li>@ingredient.Name: @ingredient.Quantity @ingredient.Unit</li>
+                }
+            </ul>
+        </section>
+        <section>
+            <h2>Instructions</h2>
+            <ul>
+                @foreach (var instruction in recipe.Instructions)
+                {
+                    <li>@instruction</li>
+                }
+            </ul>
+        </section>
+        @if (recipe.Notes.Any())
+        {
+            <section>
+                <h2>Notes</h2>
+                <ul>
+                    @foreach (var note in recipe.Notes)
+                    {
+                        <li>@note</li>
+                    }
+                </ul>
+            </section>
+        }
+    </article>
+}
+
+@code {
+    string recipeString = string.Empty;
+    Recipe? recipe = null;
+
+    private async Task LoadFile(InputFileChangeEventArgs e)
+    {
+        recipeString = await new StreamContent(e.File.OpenReadStream()).ReadAsStringAsync();
+        recipe = RecipeSerializer.Deserialize(recipeString);
+    }
+}

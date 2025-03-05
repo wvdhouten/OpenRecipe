@@ -77,7 +77,10 @@ namespace OpenRecipe.Serialization.Converters
             emitter.Emit(new MappingStart());
 
             emitter.Emit(new Scalar(ingredient.Name));
-            emitter.Emit(new Scalar($"{ingredient.Quantity}{ingredient.Unit}"));
+            var quantity = ingredient.Quantity.ToString();
+            if (!string.IsNullOrWhiteSpace(ingredient.Unit))
+                quantity += $" {ingredient.Unit}";
+            emitter.Emit(new Scalar($"{quantity}"));
 
             if (!ingredient.IsScaling)
             {

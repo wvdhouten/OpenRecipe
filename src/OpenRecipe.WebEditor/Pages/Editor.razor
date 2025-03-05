@@ -18,15 +18,14 @@
     }
 </script>
 
-<PageTitle>Open Recipe Editor</PageTitle>
-
-<h1>
+<PageTitle>Recipe Editor</PageTitle>
+<h2>
     <span>Recipe Editor</span>
     <span>
         <label for="file" class="btn btn-secondary">Load</label>
         <InputFile id="file" OnChange="LoadFile" hidden />
     </span>
-</h1>
+</h2>
 
 <div class="row mb-2">
 
@@ -216,7 +215,7 @@
             <button type="button" class="btn btn-success" @onclick="AddNote">+</button>
         </div>
     </fieldset>
-    <div class="row">
+    <div class="row mb-2">
         <div class="col-auto">
             <button type="reset" class="btn btn-default">Reset</button>
         </div>
