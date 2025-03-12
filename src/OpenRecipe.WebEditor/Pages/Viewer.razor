@@ -1,30 +1,33 @@
-﻿@using OpenRecipe.Serialization
+﻿@using System.Text.Json;
+@using OpenRecipe.Serialization
+@using OpenRecipe.WebEditor.Data;
+@using OpenRecipe.WebEditor.Models
+@inject EntityRepository<RecipeEntity> EntityRepository
+
 @page "/viewer"
+@page "/viewer/{Id}"
 
 <PageTitle>Recipe Viewer</PageTitle>
-<h2>
-    <span>Recipe Viewer</span>
-    <span>
-        <label for="file" class="btn btn-secondary">Load</label>
-        <InputFile id="file" OnChange="LoadFile" hidden />
-    </span>
-</h2>
-@if (recipe != null)
+<div class="row mb-2">
+    <label for="file" class="btn btn-secondary">Load</label>
+    <InputFile id="file" OnChange="LoadFile" hidden />
+</div>
+@if (Recipe != null)
 {
     <article>
         <header>
-            <h1>@recipe.Name</h1>
-            <h6>@recipe.Description</h6>
+            <h1>@Recipe.Name</h1>
+            <h6>@Recipe.Description</h6>
             <div>
-                <span>Preparation Time: @recipe.PrepTime</span>
-                <span>Cooking Time: @recipe.CookTime</span>
-                <span>Servings: @recipe.Servings</span>
+                <span>Servings: @Recipe.Servings</span>
+                <span>Preparation Time: @Recipe.PrepTime</span>
+                <span>Cooking Time: @Recipe.CookTime</span>
             </div>
         </header>
         <section>
             <h2>Ingredients</h2>
             <ul>
-                @foreach (var ingredient in recipe.Ingredients)
+                @foreach (var ingredient in Recipe.Ingredients)
                 {
                     <li>@ingredient.Name: @ingredient.Quantity @ingredient.Unit</li>
                 }
@@ -33,18 +36,18 @@
         <section>
             <h2>Instructions</h2>
             <ul>
-                @foreach (var instruction in recipe.Instructions)
+                @foreach (var instruction in Recipe.Instructions)
                 {
                     <li>@instruction</li>
                 }
             </ul>
         </section>
-        @if (recipe.Notes.Any())
+        @if (Recipe.Notes.Any())
         {
             <section>
                 <h2>Notes</h2>
                 <ul>
-                    @foreach (var note in recipe.Notes)
+                    @foreach (var note in Recipe.Notes)
                     {
                         <li>@note</li>
                     }
@@ -55,12 +58,19 @@
 }
 
 @code {
-    string recipeString = string.Empty;
-    Recipe? recipe = null;
+    [Parameter]
+    public string? Id { get; set; } = null;
+    private Recipe? Recipe { get; set; } = null;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Id != null)
+            Recipe = await EntityRepository.GetAsync(Id);
+    }
 
     private async Task LoadFile(InputFileChangeEventArgs e)
     {
-        recipeString = await new StreamContent(e.File.OpenReadStream()).ReadAsStringAsync();
-        recipe = RecipeSerializer.Deserialize(recipeString);
+        var recipeString = await new StreamContent(e.File.OpenReadStream()).ReadAsStringAsync();
+        Recipe = RecipeSerializer.Deserialize(recipeString);
     }
 }

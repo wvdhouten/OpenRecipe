@@ -1,0 +1,150 @@
+﻿@using System.Text.Json;
+@using OpenRecipe.Serialization
+@using OpenRecipe.WebEditor.Data;
+@using OpenRecipe.WebEditor.Models
+@using OpenRecipe.WebEditor.Models.Git
+@using OpenRecipe.WebEditor.Utils
+@inject EntityRepository<RecipeEntity> EntityRepository
+@inject IJSRuntime JS
+@page "/settings"
+
+<script>
+    window.downloadFile = async (fileName, contentStreamReference) => {
+    const arrayBuffer = await contentStreamReference.arrayBuffer();
+    const blob = new Blob([arrayBuffer]);
+    const url = URL.createObjectURL(blob);
+    const anchorElement = document.createElement('a');
+    anchorElement.href = url;
+    anchorElement.download = fileName ?? '';
+    anchorElement.click();
+    anchorElement.remove();
+    URL.revokeObjectURL(url);
+    }
+</script>
+
+<h3>Settings</h3>
+<pre>@RecipeCount recipes!</pre>
+
+<section>
+    <div class="row mb-2">
+        <div class="col-auto">
+            <button type="button" class="btn btn-primary" @onclick="ClearAsync">Clear</button>
+        </div>
+        <div class="col-auto">
+            <label for="file" class="btn btn-primary">Import Archive</label>
+            <InputFile id="file" OnChange="ImportArchiveAsync" hidden />
+        </div>
+        <div class="col-auto">
+            <button type="button" class="btn btn-primary" @onclick="ExportArchiveAsync">Export Archive</button>
+        </div>
+    </div>
+    <div class="row mb-2">
+        <div class="col">
+            <div class="form-floating">
+                <input type="text" class="form-control" id="name" @bind="GitUser" placeholder="">
+                <label for="name">GitHub User</label>
+            </div>
+        </div>
+        <div class="col">
+            <div class="form-floating">
+                <input type="text" class="form-control" id="name" @bind="GitRepository" placeholder="">
+                <label for="name">GitHub Repository</label>
+            </div>
+        </div>
+        <div class="col">
+            <div class="form-floating">
+                <input type="text" class="form-control" id="name" @bind="GitBranch" placeholder="">
+                <label for="name">GitHub Branch</label>
+            </div>
+        </div>
+        <div class="col-auto">
+            <button type="button" class="btn btn-primary" @onclick="ImportRepositoryAsync">ImportRepository</button>
+        </div>
+    </div>
+</section>
+
+@code {
+    int RecipeCount = 0;
+    private string GitUser = "wvdhouten";
+    private string GitRepository = "recipes";
+    private string GitBranch = "main";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await EntityRepository.InitAsync();
+
+        RecipeCount = (await EntityRepository.GetAsync()).Count();
+    }
+
+    private async Task ClearAsync()
+    {
+        await EntityRepository.ClearAsync();
+
+        RecipeCount = (await EntityRepository.GetAsync()).Count();
+    }
+
+    private async Task ImportRepositoryAsync()
+    {
+        if (string.IsNullOrWhiteSpace(GitUser)
+        || string.IsNullOrWhiteSpace(GitRepository)
+        || string.IsNullOrWhiteSpace(GitBranch))
+            return;
+
+        var request = new HttpRequestMessage(HttpMethod.Get, $"https://api.github.com/repos/{GitUser}/{GitRepository}/git/trees/{GitBranch}?recursive=1");
+        using var client = new HttpClient();
+        var response = await client.SendAsync(request);
+        var tree = await response.Content.ReadFromJsonAsync<GitTree>();
+        foreach (var item in tree!.Tree)
+            await TryImportRecipeAsync(client, item);
+
+        RecipeCount = (await EntityRepository.GetAsync()).Count();
+    }
+
+    private async Task TryImportRecipeAsync(HttpClient client, GitTreeItem item)
+    {
+        if (!item.Path.EndsWith(".yuml"))
+            return;
+
+        var request = new HttpRequestMessage(HttpMethod.Get, item.Url);
+        var response = await client.SendAsync(request);
+        var file = await response.Content.ReadFromJsonAsync<GitTreeFile>();
+
+        byte[] data = Convert.FromBase64String(file!.Content);
+        string content = System.Text.Encoding.UTF8.GetString(data);
+
+        var recipe = RecipeSerializer.Deserialize<RecipeEntity>(content);
+        recipe.Id ??= Ulid.NewUlid().ToString();
+        await EntityRepository.SetAsync(recipe);
+    }
+
+    private async Task ImportArchiveAsync(InputFileChangeEventArgs e)
+    {
+        using var memoryStream = new MemoryStream();
+        using (var fileStream = new StreamContent(e.File.OpenReadStream(5 * 1024 * 1024)).ReadAsStream())
+        {
+            await fileStream.CopyToAsync(memoryStream);
+            memoryStream.Position = 0;
+        }
+
+        var contents = await ArchiveUtil.UnpackAsync(memoryStream);
+
+        foreach (var (id, content) in contents)
+        {
+            var recipe = RecipeSerializer.Deserialize<RecipeEntity>(content);
+            recipe.Id ??= Ulid.NewUlid().ToString();
+            await EntityRepository.SetAsync(recipe);
+        }
+
+        RecipeCount = (await EntityRepository.GetAsync()).Count();
+    }
+
+    private async Task ExportArchiveAsync()
+    {
+        var recipes = await EntityRepository.GetAsync();
+        var contents = recipes.Select(recipe => (recipe.Id!, RecipeSerializer.Serialize(recipe)));
+        using var stream = await ArchiveUtil.PackAsync(contents);
+        using var reference = new DotNetStreamReference(stream: stream);
+
+        await JS.InvokeVoidAsync("downloadFile", "open-recipe-archive.zip", reference);
+    }
+}

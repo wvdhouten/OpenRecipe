@@ -1,0 +1,77 @@
+﻿@using System.Text.Json;
+@using OpenRecipe.WebEditor.Data;
+@using OpenRecipe.WebEditor.Models
+@inject EntityRepository<RecipeEntity> EntityRepository
+@page "/"
+@page "/catalog"
+
+<h3>Catalog</h3>
+<section>
+    <EditForm Model="@SearchFilter" OnValidSubmit="HandleValidSubmit" class="form-horizontal">
+        <div class="row mb-2">
+            <div class="col">
+                <div class="form-floating">
+                    <input type="text" class="form-control" id="name" @bind="SearchFilter" placeholder="">
+                    <label for="name">Filter</label>
+                </div>
+            </div>
+        </div>
+        <div class="row mb-2">
+            <div class="col">
+                <button type="submit" class="btn btn-primary">Search</button>
+            </div>
+        </div>
+    </EditForm>
+</section>
+<section>
+    <pre>@RecipeCount recipes!</pre>
+    <table class="table">
+        <thead>
+            <tr>
+                <th scope="col">Name</th>
+                <th scope="col">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in SearchResults)
+            {
+                <tr>
+                    <th scope="row">@item.Name</th>
+                    <td>
+                        <NavLink href="@($"/viewer/{item.Id}")">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-search" viewBox="0 0 16 16">
+                                <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0" />
+                            </svg>
+                        </NavLink>
+                        <NavLink href="@($"/edit/{item.Id}")">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-pencil-square" viewBox="0 0 16 16">
+                                <path d="M15.502 1.94a.5.5 0 0 1 0 .706L14.459 3.69l-2-2L13.502.646a.5.5 0 0 1 .707 0l1.293 1.293zm-1.75 2.456-2-2L4.939 9.21a.5.5 0 0 0-.121.196l-.805 2.414a.25.25 0 0 0 .316.316l2.414-.805a.5.5 0 0 0 .196-.12l6.813-6.814z" />
+                                <path fill-rule="evenodd" d="M1 13.5A1.5 1.5 0 0 0 2.5 15h11a1.5 1.5 0 0 0 1.5-1.5v-6a.5.5 0 0 0-1 0v6a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5v-11a.5.5 0 0 1 .5-.5H9a.5.5 0 0 0 0-1H2.5A1.5 1.5 0 0 0 1 2.5z" />
+                            </svg>
+                        </NavLink>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</section>
+
+@code {
+    int RecipeCount = 0;
+
+    string SearchFilter { get; set; } = string.Empty;
+    IEnumerable<RecipeEntity> SearchResults { get; set; } = [];
+
+    private async Task HandleValidSubmit()
+    {
+        SearchResults = await EntityRepository.GetAsync(e => e.Name.Contains(SearchFilter, StringComparison.OrdinalIgnoreCase));
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await EntityRepository.InitAsync();
+
+        SearchResults = await EntityRepository.GetAsync();
+        RecipeCount = SearchResults.Count();
+    }
+}

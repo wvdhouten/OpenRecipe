@@ -66,7 +66,7 @@ public class Recipe
     public IList<string> Notes { get; set; } = [];
 
     /// <summary>
-    /// Gets or sets a dictionary of extra data.
+    /// Gets or sets a dictionary of metadata.
     /// </summary>
-    public IDictionary<string, string> ExtraData { get; set; } = new Dictionary<string, string>();
+    public IDictionary<string, string> Metadata { get; set; } = new Dictionary<string, string>();
 }
