@@ -17,41 +17,62 @@
 @if (Recipe != null)
 {
     <article>
-        <header>
+        <header class="row">
             <h1>@Recipe.Name</h1>
             <h6>@Recipe.Description</h6>
-            <div>
-                <span>Servings: @Recipe.Servings</span>
-                <span>Preparation Time: @Recipe.PrepTime</span>
-                <span>Cooking Time: @Recipe.CookTime</span>
+            <hr />
+            <div class="row">
+                <div class="col">
+                    Prep: @($"{Recipe.PrepTime} min")
+                </div>
+                <div class="col">
+                    Cook: @($"{Recipe.CookTime} min")
+                </div>
+                <div class="col">
+                    Servings:
+                    <a class="btn btn-sm btn-outline-primary" @onclick="() => DesiredServings--">-</a>
+                    @DesiredServings
+                    <a class="btn btn-sm btn-outline-primary" @onclick="() => DesiredServings++">+</a>
+                    <a class="btn btn-sm btn-outline-primary" @onclick="() => DesiredServings = Recipe.Servings ?? 1">reset</a>
+                </div>
             </div>
         </header>
-        <section>
+        <section class="row">
             <h2>Ingredients</h2>
-            <ul>
+            <ul class="list-group">
                 @foreach (var ingredient in Recipe.Ingredients)
                 {
-                    <li>@ingredient.Name: @ingredient.Quantity @ingredient.Unit</li>
+                    <li class="list-group-item">
+                        <label>
+                            <input class="form-check-input" type="checkbox" />
+                            @ingredient.Name: @ScaleIngredient(ingredient) @ingredient.Unit
+                        </label>
+                    </li>
                 }
             </ul>
         </section>
-        <section>
+        <section class="row">
             <h2>Instructions</h2>
-            <ul>
+            <ul class="list-group">
                 @foreach (var instruction in Recipe.Instructions)
                 {
-                    <li>@instruction</li>
+                    <li class="list-group-item">
+                        <label>
+                            <input class="form-check-input" type="checkbox" />
+                            @instruction
+                        </label>
+                    </li>
                 }
             </ul>
         </section>
         @if (Recipe.Notes.Any())
         {
-            <section>
+            <section class="row">
                 <h2>Notes</h2>
-                <ul>
+                <ul class="list-group">
                     @foreach (var note in Recipe.Notes)
                     {
-                        <li>@note</li>
+                        <li class="list-group-item">@note</li>
                     }
                 </ul>
             </section>
@@ -63,12 +84,27 @@
     [Parameter]
     public string? Id { get; set; } = null;
     private Recipe? Recipe { get; set; } = null;
+    private int DesiredServings { get; set; } = 0;
 
     protected override async Task OnInitializedAsync()
     {
         await RecipeRepository.InitAsync();
-        if (Id != null)
-            Recipe = await RecipeRepository.GetAsync(Id);
+        if (Id == null)
+            return;
+
+        Recipe = await RecipeRepository.GetAsync(Id);
+        if (Recipe == null)
+            return;
+
+        DesiredServings = Recipe.Servings ?? 0;
+    }
+
+    private double ScaleIngredient(Ingredient ingredient)
+    {
+        if (!ingredient.IsScaling)
+            return ingredient.Quantity;
+
+        return Math.Round(ingredient.Quantity / (Recipe?.Servings ?? 1) * DesiredServings, 2);
     }
 
     private async Task LoadFile(InputFileChangeEventArgs e)

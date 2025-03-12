@@ -1,0 +1,16 @@
+﻿article > header,
+article > section {
+  background-color: rgba(255, 106, 0, 0.1);
+  border-radius: 8px;
+  padding-top: .5em;
+  padding-bottom: .5em;
+  margin-bottom: .5em;
+}
+
+.list-group {
+  padding-left: calc(var(--bs-gutter-x)* .5);
+}
+
+.list-group label > input {
+  margin-right: .5em;
+}
