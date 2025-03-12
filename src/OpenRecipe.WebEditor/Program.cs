@@ -10,6 +10,7 @@ builder.RootComponents.Add<HeadOutlet>("head::after");
 builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
 builder.Services.AddScoped<IndexedDbAccessor>();
 builder.Services.AddScoped(typeof(EntityRepository<>));
+builder.Services.AddScoped<RecipeRepository>();
 
 var app = builder.Build();
 

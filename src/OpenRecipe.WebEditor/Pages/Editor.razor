@@ -3,16 +3,21 @@
 @using OpenRecipe.Serialization
 @using OpenRecipe.WebEditor.Data;
 @using OpenRecipe.WebEditor.Models
-@inject EntityRepository<RecipeEntity> EntityRepository
+@inject RecipeRepository RecipeRepository
 
 @page "/editor"
 @page "/editor/{Id}"
 
 <PageTitle>Recipe Editor</PageTitle>
-<EditForm Model="@Recipe" OnValidSubmit="HandleValidSubmit" class="form-horizontal">
+<EditForm Model="@Recipe" OnValidSubmit="SaveRecipe" class="form-horizontal">
     <div class="row mb-2">
-        <label for="file" class="btn btn-secondary">Load</label>
-        <InputFile id="file" OnChange="LoadFile" hidden />
+        <div class="col-auto">
+            <label for="file" class="btn btn-secondary">Load</label>
+            <InputFile id="file" OnChange="LoadFile" hidden />
+        </div>
+        <div class="col-auto">
+            <button type="button" class="btn btn-primary" @onclick="NewRecipe">New</button>
+        </div>
     </div>
     <div class="row mb-2">
         <div class="col">
@@ -60,13 +65,12 @@
     </div>
     <fieldset class="row mb-2">
         <legend>Tags</legend>
-        <div>
-            @for (int i = 0; i < Recipe.Tags.Count; i++)
+        <div class="col">
+            @foreach (var tag in KnownTags)
             {
-                var index = i;
                 <div class="btn-group mb-2 me-2">
-                    <div class="input-group-text">@Recipe.Tags[index]</div>
-                    <button type="button" class="btn btn-danger" @onclick="() => RemoveTag(index)">&times;</button>
+                    <input type="checkbox" class="btn-check" id="@tag" name="tags" @onchange="e => UpdateTagSelection(tag, Convert.ToBoolean(e.Value))" checked="@Recipe.Tags.Contains(tag)">
+                    <label class="btn btn-outline-primary" for="@tag">@tag</label>
                 </div>
             }
         </div>
@@ -238,17 +242,49 @@
     [Parameter]
     public string? Id { get; set; } = null;
 
+    IList<string> KnownTags = [];
+
     private RecipeEntity Recipe { get; set; } = new RecipeEntity { Id = Ulid.NewUlid().ToString() };
 
     protected override async Task OnInitializedAsync()
     {
+        await RecipeRepository.InitAsync();
+
+        await RefreshData();
+
         if (Id != null)
-            Recipe = (await EntityRepository.GetAsync(Id)) ?? new RecipeEntity { Id = Ulid.NewUlid().ToString() };
+            Recipe = (await RecipeRepository.GetAsync(Id)) ?? new RecipeEntity { Id = Ulid.NewUlid().ToString() };
     }
 
-    private async Task HandleValidSubmit()
+    protected async Task RefreshData()
     {
-        await EntityRepository.SetAsync(Recipe);
+        KnownTags = new List<string>(await RecipeRepository.GetTagsAsync());
+    }
+
+    private async Task NewRecipe()
+    {
+        Recipe = new RecipeEntity { Id = Ulid.NewUlid().ToString() };
+
+        await RefreshData();
+    }
+
+    private async Task LoadFile(InputFileChangeEventArgs e)
+    {
+        var serializedRecipe = await new StreamContent(e.File.OpenReadStream()).ReadAsStringAsync();
+        Recipe = RecipeSerializer.Deserialize<RecipeEntity>(serializedRecipe);
+
+        foreach (var tag in Recipe.Tags)
+        {
+            if (!KnownTags.Contains(tag))
+                KnownTags.Add(tag);
+        }
+    }
+
+    private async Task SaveRecipe()
+    {
+        await RecipeRepository.SetAsync(Recipe);
+
+        await RefreshData();
     }
 
     #region Ingredients
@@ -334,13 +370,17 @@
         if (string.IsNullOrWhiteSpace(newTag))
             return;
 
+        KnownTags.Add(newTag);
         Recipe.Tags.Add(newTag.Trim());
         newTag = string.Empty;
     }
 
-    private void RemoveTag(int index)
+    private void UpdateTagSelection(string tag, bool isSelected)
     {
-        Recipe.Tags.RemoveAt(index);
+        if (isSelected)
+            Recipe.Tags.Add(tag);
+        else
+            Recipe.Tags.Remove(tag);
     }
 
     #endregion
@@ -384,16 +424,6 @@
     private void RemoveMetadata(string key)
     {
         Recipe.Metadata.Remove(key);
-    }
-
-    #endregion
-
-    #region Interaction
-
-    private async Task LoadFile(InputFileChangeEventArgs e)
-    {
-        var serializedRecipe = await new StreamContent(e.File.OpenReadStream()).ReadAsStringAsync();
-        Recipe = RecipeSerializer.Deserialize<RecipeEntity>(serializedRecipe);
     }
 
     #endregion

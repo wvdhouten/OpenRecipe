@@ -4,7 +4,8 @@
 @using OpenRecipe.WebEditor.Models
 @using OpenRecipe.WebEditor.Models.Git
 @using OpenRecipe.WebEditor.Utils
-@inject EntityRepository<RecipeEntity> EntityRepository
+@using System.Text.RegularExpressions
+@inject RecipeRepository RecipeRepository
 @inject IJSRuntime JS
 @page "/settings"
 
@@ -65,22 +66,25 @@
 
 @code {
     int RecipeCount = 0;
+
     private string GitUser = "wvdhouten";
     private string GitRepository = "recipes";
     private string GitBranch = "main";
 
     protected override async Task OnInitializedAsync()
     {
-        await EntityRepository.InitAsync();
-
-        RecipeCount = (await EntityRepository.GetAsync()).Count();
+        await RecipeRepository.InitAsync();
+        await UpdateCountsAsync();
     }
 
     private async Task ClearAsync()
     {
-        await EntityRepository.ClearAsync();
+        await RecipeRepository.ClearAsync();
+        await UpdateCountsAsync();
+    }
 
-        RecipeCount = (await EntityRepository.GetAsync()).Count();
+    private async Task UpdateCountsAsync() {
+        RecipeCount = (await RecipeRepository.GetAsync()).Count();
     }
 
     private async Task ImportRepositoryAsync()
@@ -95,12 +99,12 @@
         var response = await client.SendAsync(request);
         var tree = await response.Content.ReadFromJsonAsync<GitTree>();
         foreach (var item in tree!.Tree)
-            await TryImportRecipeAsync(client, item);
+            await TryImportFileAsync(client, item);
 
-        RecipeCount = (await EntityRepository.GetAsync()).Count();
+        await UpdateCountsAsync();
     }
 
-    private async Task TryImportRecipeAsync(HttpClient client, GitTreeItem item)
+    private async Task TryImportFileAsync(HttpClient client, GitTreeItem item)
     {
         if (!item.Path.EndsWith(".yuml"))
             return;
@@ -114,7 +118,8 @@
 
         var recipe = RecipeSerializer.Deserialize<RecipeEntity>(content);
         recipe.Id ??= Ulid.NewUlid().ToString();
-        await EntityRepository.SetAsync(recipe);
+
+        await RecipeRepository.SetAsync(recipe);
     }
 
     private async Task ImportArchiveAsync(InputFileChangeEventArgs e)
@@ -132,15 +137,16 @@
         {
             var recipe = RecipeSerializer.Deserialize<RecipeEntity>(content);
             recipe.Id ??= Ulid.NewUlid().ToString();
-            await EntityRepository.SetAsync(recipe);
+            await RecipeRepository.SetAsync(recipe);
         }
 
-        RecipeCount = (await EntityRepository.GetAsync()).Count();
+        await UpdateCountsAsync();
     }
 
     private async Task ExportArchiveAsync()
     {
-        var recipes = await EntityRepository.GetAsync();
+        var recipes = await RecipeRepository.GetAsync();
+
         var contents = recipes.Select(recipe => (recipe.Id!, RecipeSerializer.Serialize(recipe)));
         using var stream = await ArchiveUtil.PackAsync(contents);
         using var reference = new DotNetStreamReference(stream: stream);

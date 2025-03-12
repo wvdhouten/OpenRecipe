@@ -5,8 +5,9 @@ namespace OpenRecipe.WebEditor.Data
     public class EntityRepository<TEntity> where TEntity : class, IEntity
     {
         private readonly string _collectionName = typeof(TEntity).Name.ToLowerInvariant();
-        private readonly Dictionary<string, TEntity> _entities = [];
         private readonly IndexedDbAccessor _indexedDb;
+
+        protected Dictionary<string, TEntity> Entities { get; } = [];
 
         public EntityRepository(IndexedDbAccessor indexedDb)
         {
@@ -15,33 +16,38 @@ namespace OpenRecipe.WebEditor.Data
 
         public async Task InitAsync()
         {
-
             await _indexedDb.InitializeAsync(_collectionName);
             await RefreshAsync();
         }
 
         public async Task RefreshAsync()
         {
-            _entities.Clear();
+            Entities.Clear();
 
             var entities = await _indexedDb.GetAllAsync<TEntity>(_collectionName);
             foreach (var entity in entities)
-                _entities[entity.Id!] = entity;
+                Entities[entity.Id!] = entity;
+
+            await RefreshCachesAsync();
+        }
+
+        public virtual Task RefreshCachesAsync() {
+            return Task.CompletedTask;
         }
 
         public Task<IEnumerable<TEntity>> GetAsync()
         {
-            return Task.FromResult(_entities.Values.AsEnumerable());
+            return Task.FromResult(Entities.Values.AsEnumerable());
         }
 
         public Task<IEnumerable<TEntity>> GetAsync(Func<TEntity, bool> predicate)
         {
-            return Task.FromResult(_entities.Values.Where(predicate));
+            return Task.FromResult(Entities.Values.Where(predicate));
         }
 
         public Task<TEntity?> GetAsync(string id)
         {
-            _entities.TryGetValue(id, out var entity);
+            Entities.TryGetValue(id, out var entity);
 
             return Task.FromResult(entity);
         }
@@ -49,24 +55,30 @@ namespace OpenRecipe.WebEditor.Data
         public async Task<TEntity> SetAsync(TEntity entity)
         {
             entity.Id ??= Ulid.NewUlid().ToString();
-            _entities[entity.Id] = entity;
+            Entities[entity.Id] = entity;
             await _indexedDb.SetValueAsync(_collectionName, entity);
+
+            await RefreshCachesAsync();
 
             return entity;
         }
 
         public async Task<TEntity?> RemoveAsync(string id)
         {
-            if (_entities.Remove(id, out var entity))
+            if (Entities.Remove(id, out var entity))
                 await _indexedDb.RemoveValueAsync<TEntity>(_collectionName, id);
+
+            await RefreshCachesAsync();
 
             return entity;
         }
 
         public async Task ClearAsync()
         {
-            _entities.Clear();
+            Entities.Clear();
             await _indexedDb.ClearAsync(_collectionName);
+
+            await RefreshCachesAsync();
         }
     }
 }

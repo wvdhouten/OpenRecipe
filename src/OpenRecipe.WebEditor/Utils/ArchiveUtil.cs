@@ -1,5 +1,4 @@
 ﻿using System.IO.Compression;
-using System.IO.Pipes;
 
 namespace OpenRecipe.WebEditor.Utils
 {

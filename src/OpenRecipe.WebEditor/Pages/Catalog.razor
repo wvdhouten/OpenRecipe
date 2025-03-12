@@ -1,27 +1,45 @@
 ﻿@using System.Text.Json;
 @using OpenRecipe.WebEditor.Data;
+@using OpenRecipe.WebEditor.Extensions
 @using OpenRecipe.WebEditor.Models
-@inject EntityRepository<RecipeEntity> EntityRepository
+@inject RecipeRepository RecipeRepository
 @page "/"
 @page "/catalog"
 
 <h3>Catalog</h3>
 <section>
-    <EditForm Model="@SearchFilter" OnValidSubmit="HandleValidSubmit" class="form-horizontal">
+    <form class="form-horizontal">
         <div class="row mb-2">
             <div class="col">
                 <div class="form-floating">
-                    <input type="text" class="form-control" id="name" @bind="SearchFilter" placeholder="">
-                    <label for="name">Filter</label>
+                    <input type="text" class="form-control" id="name" @bind="NameFilter" placeholder="" autocomplete="off">
+                    <label for="name">Name/Description Filter</label>
                 </div>
+            </div>
+            <div class="col">
+                <div class="form-floating">
+                    <input type="text" class="form-control" id="name" @bind="IngredientFilter" placeholder="" autocomplete="off">
+                    <label for="name">Ingredient Filter</label>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col">
+                @foreach (var tag in KnownTags)
+                {
+                    <div class="btn-group mb-2 me-2">
+                        <input type="checkbox" class="btn-check" id="@tag" name="tags" @onchange="e => UpdateTagSelection(tag, Convert.ToBoolean(e.Value))">
+                        <label class="btn btn-outline-primary" for="@tag">@tag</label>
+                    </div>
+                }
             </div>
         </div>
         <div class="row mb-2">
             <div class="col">
-                <button type="submit" class="btn btn-primary">Search</button>
+                <button type="submit" class="btn btn-primary" @onclick="ExecuteFilter">Filter</button>
             </div>
         </div>
-    </EditForm>
+    </form>
 </section>
 <section>
     <pre>@RecipeCount recipes!</pre>
@@ -43,12 +61,18 @@
                                 <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0" />
                             </svg>
                         </NavLink>
-                        <NavLink href="@($"/edit/{item.Id}")">
+                        <NavLink href="@($"/editor/{item.Id}")">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-pencil-square" viewBox="0 0 16 16">
                                 <path d="M15.502 1.94a.5.5 0 0 1 0 .706L14.459 3.69l-2-2L13.502.646a.5.5 0 0 1 .707 0l1.293 1.293zm-1.75 2.456-2-2L4.939 9.21a.5.5 0 0 0-.121.196l-.805 2.414a.25.25 0 0 0 .316.316l2.414-.805a.5.5 0 0 0 .196-.12l6.813-6.814z" />
                                 <path fill-rule="evenodd" d="M1 13.5A1.5 1.5 0 0 0 2.5 15h11a1.5 1.5 0 0 0 1.5-1.5v-6a.5.5 0 0 0-1 0v6a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5v-11a.5.5 0 0 1 .5-.5H9a.5.5 0 0 0 0-1H2.5A1.5 1.5 0 0 0 1 2.5z" />
                             </svg>
                         </NavLink>
+                        <a href="#delete" @onclick="() => DeleteRecipeAsync(item.Id)">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash" viewBox="0 0 16 16">
+                                <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z" />
+                                <path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3h11V2h-11z" />
+                            </svg>
+                        </a>
                     </td>
                 </tr>
             }
@@ -58,20 +82,68 @@
 
 @code {
     int RecipeCount = 0;
+    IEnumerable<string> KnownTags = [];
 
-    string SearchFilter { get; set; } = string.Empty;
+    IList<string> SelectedTags = [];
+    string NameFilter { get; set; } = string.Empty;
+    string IngredientFilter { get; set; } = string.Empty;
+
     IEnumerable<RecipeEntity> SearchResults { get; set; } = [];
-
-    private async Task HandleValidSubmit()
-    {
-        SearchResults = await EntityRepository.GetAsync(e => e.Name.Contains(SearchFilter, StringComparison.OrdinalIgnoreCase));
-    }
 
     protected override async Task OnInitializedAsync()
     {
-        await EntityRepository.InitAsync();
+        await RecipeRepository.InitAsync();
 
-        SearchResults = await EntityRepository.GetAsync();
+        SearchResults = await RecipeRepository.GetAsync();
+        KnownTags = await RecipeRepository.GetTagsAsync();
         RecipeCount = SearchResults.Count();
+    }
+
+    private void UpdateTagSelection(string tag, bool isSelected)
+    {
+        if (isSelected)
+            SelectedTags.Add(tag);
+        else
+            SelectedTags.Remove(tag);
+    }
+
+    private async Task ExecuteFilter()
+    {
+        SearchResults = await RecipeRepository.GetAsync(
+            e => MatchesNameFilter(e)
+            && MatchesIngredientFilter(e)
+            && MatchesTagFilter(e)
+        );
+    }
+
+    private bool MatchesNameFilter(RecipeEntity entity)
+    {
+        return entity.Name.Contains(NameFilter, StringComparison.OrdinalIgnoreCase)
+        || (entity.Description != null
+            && entity.Description.Contains(NameFilter, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private bool MatchesIngredientFilter(RecipeEntity entity)
+    {
+        return entity.Ingredients.Any(i => i.Name.Contains(IngredientFilter, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private bool MatchesTagFilter(RecipeEntity entity)
+    {
+        return SelectedTags.All(entity.Tags.Contains);
+    }
+
+    private async Task DeleteRecipeAsync(string? id)
+    {
+        if (string.IsNullOrWhiteSpace(id))
+            return;
+
+        await RecipeRepository.RemoveAsync(id);
+
+        var allRecipes = await RecipeRepository.GetAsync();
+        KnownTags = await RecipeRepository.GetTagsAsync();
+        RecipeCount = allRecipes.Count();
+
+        await ExecuteFilter();
     }
 }

@@ -2,15 +2,17 @@
 @using OpenRecipe.Serialization
 @using OpenRecipe.WebEditor.Data;
 @using OpenRecipe.WebEditor.Models
-@inject EntityRepository<RecipeEntity> EntityRepository
+@inject RecipeRepository RecipeRepository
 
 @page "/viewer"
 @page "/viewer/{Id}"
 
 <PageTitle>Recipe Viewer</PageTitle>
 <div class="row mb-2">
-    <label for="file" class="btn btn-secondary">Load</label>
-    <InputFile id="file" OnChange="LoadFile" hidden />
+    <div class="col-auto">
+        <label for="file" class="btn btn-secondary">Load</label>
+        <InputFile id="file" OnChange="LoadFile" hidden />
+    </div>
 </div>
 @if (Recipe != null)
 {
@@ -64,13 +66,13 @@
 
     protected override async Task OnInitializedAsync()
     {
+        await RecipeRepository.InitAsync();
         if (Id != null)
-            Recipe = await EntityRepository.GetAsync(Id);
+            Recipe = await RecipeRepository.GetAsync(Id);
     }
 
     private async Task LoadFile(InputFileChangeEventArgs e)
     {
-        var recipeString = await new StreamContent(e.File.OpenReadStream()).ReadAsStringAsync();
-        Recipe = RecipeSerializer.Deserialize(recipeString);
+        Recipe = RecipeSerializer.Deserialize(await new StreamContent(e.File.OpenReadStream()).ReadAsStringAsync());
     }
 }
