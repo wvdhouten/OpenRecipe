@@ -22,13 +22,13 @@
             <h6>@Recipe.Description</h6>
             <hr />
             <div class="row">
-                <div class="col">
+                <div class="col-auto">
                     Prep: @($"{Recipe.PrepTime} min")
                 </div>
-                <div class="col">
+                <div class="col-auto">
                     Cook: @($"{Recipe.CookTime} min")
                 </div>
-                <div class="col">
+                <div class="col-auto">
                     Servings:
                     <a class="btn btn-sm btn-outline-primary" @onclick="() => DesiredServings--">-</a>
                     @DesiredServings
