@@ -28,37 +28,37 @@
 
 <section>
     <div class="row mb-2">
-        <div class="col-auto">
+        <div class="col-md-auto">
             <button type="button" class="btn btn-primary" @onclick="ClearAsync">Clear</button>
         </div>
-        <div class="col-auto">
+        <div class="col-md-auto">
             <label for="file" class="btn btn-primary">Import Archive</label>
             <InputFile id="file" OnChange="ImportArchiveAsync" hidden />
         </div>
-        <div class="col-auto">
+        <div class="col-md-auto">
             <button type="button" class="btn btn-primary" @onclick="ExportArchiveAsync">Export Archive</button>
         </div>
     </div>
     <div class="row mb-2">
-        <div class="col">
+        <div class="col-lg">
             <div class="form-floating">
                 <input type="text" class="form-control" id="name" @bind="GitUser" placeholder="">
                 <label for="name">GitHub User</label>
             </div>
         </div>
-        <div class="col">
+        <div class="col-lg">
             <div class="form-floating">
                 <input type="text" class="form-control" id="name" @bind="GitRepository" placeholder="">
                 <label for="name">GitHub Repository</label>
             </div>
         </div>
-        <div class="col">
+        <div class="col-lg">
             <div class="form-floating">
                 <input type="text" class="form-control" id="name" @bind="GitBranch" placeholder="">
                 <label for="name">GitHub Branch</label>
             </div>
         </div>
-        <div class="col-auto">
+        <div class="col-lg-auto">
             <button type="button" class="btn btn-primary" @onclick="ImportRepositoryAsync">ImportRepository</button>
         </div>
     </div>
