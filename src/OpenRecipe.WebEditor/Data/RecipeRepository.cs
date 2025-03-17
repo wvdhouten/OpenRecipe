@@ -13,7 +13,7 @@ namespace OpenRecipe.WebEditor.Data
         public override Task RefreshCachesAsync()
         {
             Tags.Clear();
-            Tags.AddRange(Entities.SelectMany(e => e.Value.Tags).Distinct());
+            Tags.AddRange(Entities.SelectMany(e => e.Value.Tags).Distinct().Order());
 
             return Task.CompletedTask;
         }
