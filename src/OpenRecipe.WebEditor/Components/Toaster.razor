@@ -1,0 +1,41 @@
+﻿@implements IAsyncDisposable
+
+<div id="toast-container" class="toast-container position-fixed bottom-0 end-0 p-3"></div>
+<template id="toast-template">
+    <div class="toast bg-info-subtle text-info-emphasis align-items-center" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="d-flex">
+            <div class="toast-body"></div>
+            <button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+    </div>
+</template>
+
+@code {
+    private Lazy<IJSObjectReference> _accessorJsRef = new();
+    private readonly IJSRuntime _jsRuntime;
+
+    public Toaster(IJSRuntime jsRuntime)
+    {
+        _jsRuntime = jsRuntime;
+    }
+
+    public async Task CreateToastAsync(string message)
+    {
+        await WaitForReference();
+        await _accessorJsRef.Value.InvokeVoidAsync("createToast", message);
+    }
+
+    private async Task WaitForReference()
+    {
+        if (!_accessorJsRef.IsValueCreated)
+            _accessorJsRef = new(await _jsRuntime.InvokeAsync<IJSObjectReference>("import", "/js/Toaster.js"));
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        GC.SuppressFinalize(this);
+
+        if (_accessorJsRef.IsValueCreated)
+            await _accessorJsRef.Value.DisposeAsync();
+    }
+}

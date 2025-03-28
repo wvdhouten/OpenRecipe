@@ -3,240 +3,272 @@
 @using OpenRecipe.Serialization
 @using OpenRecipe.WebEditor.Data;
 @using OpenRecipe.WebEditor.Models
-@inject RecipeRepository RecipeRepository
-
+@inject StorageContext DbContext
+@inject Toaster Toaster
 @page "/editor"
 @page "/editor/{Id}"
 
 <PageTitle>Recipe Editor</PageTitle>
-<EditForm Model="@Recipe" OnValidSubmit="SaveRecipe" class="form-horizontal">
-    <div class="row mb-2">
-        <div class="col-auto">
-            <label for="file" class="btn btn-secondary">Load</label>
-            <InputFile id="file" OnChange="LoadFile" hidden />
-        </div>
-        <div class="col-auto">
-            <button type="button" class="btn btn-primary" @onclick="NewRecipe">New</button>
-        </div>
+<section class="row mb-2">
+    <div class="col-auto">
+        <label for="file" class="link-secondary" role="button">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-upload" viewBox="0 0 16 16">
+                <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5" />
+                <path d="M7.646 1.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1-.708.708L8.5 2.707V11.5a.5.5 0 0 1-1 0V2.707L5.354 4.854a.5.5 0 1 1-.708-.708z" />
+            </svg>
+        </label>
+        <InputFile id="file" OnChange="LoadFile" hidden />
     </div>
-    <div class="row mb-2">
-        <div class="col">
-            <div class="form-floating">
-                <input type="text" class="form-control" id="name" @bind="Recipe.Name" placeholder="">
-                <label for="name">Name</label>
-            </div>
-        </div>
+    <div class="col-auto">
+        <a class="link-info" role="button" @onclick="NewRecipe">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-plus-circle" viewBox="0 0 16 16">
+                <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16" />
+                <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4" />
+            </svg>
+        </a>
     </div>
-    <div class="row mb-2">
-        <div class="col">
-            <div class="form-floating">
-                <textarea class="form-control" id="description" @bind="Recipe.Description" placeholder=""></textarea>
-                <label for="description">Description</label>
-            </div>
-        </div>
-    </div>
-    <div class="row mb-2">
-        <div class="col">
-            <div class="form-floating">
-                <input type="text" class="form-control" id="source" @bind="Recipe.Source" placeholder="" />
-                <label for="source">Source</label>
-            </div>
-        </div>
-    </div>
-    <div class="row mb-2">
-        <div class="col-lg">
-            <div class="form-floating">
-                <input type="number" class="form-control" id="servings" @bind="Recipe.Servings" placeholder="" required />
-                <label for="source">Servings</label>
-            </div>
-        </div>
-        <div class="col-lg">
-            <div class="form-floating">
-                <input type="number" class="form-control" id="prep-time" @bind="Recipe.PrepTime" placeholder="" />
-                <label for="source">Preparation time</label>
-            </div>
-        </div>
-        <div class="col-lg">
-            <div class="form-floating">
-                <input type="number" class="form-control" id="cook-time" @bind="Recipe.CookTime" placeholder="" />
-                <label for="source">Cooking time</label>
-            </div>
-        </div>
-    </div>
-    <fieldset class="row mb-2">
-        <legend>Tags</legend>
-        <div class="col">
-            @foreach (var tag in KnownTags)
-            {
-                <div class="btn-group mb-2 me-2">
-                    <input type="checkbox" class="btn-check" id="@tag" name="tags" @onchange="e => UpdateTagSelection(tag, Convert.ToBoolean(e.Value))" checked="@Recipe.Tags.Contains(tag)">
-                    <label class="btn btn-outline-primary" for="@tag">@tag</label>
-                </div>
-            }
-        </div>
-        <div class="input-group">
-            <div class="form-floating">
-                <input type="text" class="form-control" id="new-tag" @bind="newTag" placeholder="" />
-                <label for="new-tag">Tag</label>
-            </div>
-            <button type="button" class="btn btn-success" @onclick="AddTag">+</button>
-        </div>
-    </fieldset>
-    <fieldset class="mb-2">
-        <legend>Ingredients</legend>
-        @foreach (var ingredient in Recipe.Ingredients)
-        {
-            <div class="row mb-2">
-                <div class="input-group">
-                    <div class="form-floating">
-                        <input type="text" class="form-control" id="ingredient-name" @bind="ingredient.Name" placeholder="" />
-                        <label for="ingredient-name">Name</label>
-                    </div>
-                    <div class="form-floating">
-                        <input type="number" class="form-control" id="ingredient-quantity" @bind="ingredient.Quantity" placeholder="" />
-                        <label for="ingredient-quantity">Quantity</label>
-                    </div>
-                    <div class="form-floating">
-                        <input type="text" class="form-control" id="ingredient-unit" @bind="ingredient.Unit" placeholder="" />
-                        <label for="ingredient-unit">Unit</label>
-                    </div>
-                    <div class="input-group-text">
-                        <div class="form-check">
-                            <input id="ingredient-isScaling" type="checkbox" @bind="ingredient.IsScaling" class="form-check-input" />
-                            <label for="ingredient-isScaling" class="form-check-label">Scaling</label>
+</section>
+<hr />
+<form class="form-horizontal">
+    <section class="row">
+        <ul class="nav nav-tabs" id="tab-list" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link link-light active" id="main-tab" data-bs-toggle="tab" data-bs-target="#main-tab-pane" type="button" role="tab" aria-controls="ingredients-tab-pane" aria-selected="true">Main</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link link-light link-light" id="ingredients-tab" data-bs-toggle="tab" data-bs-target="#ingredients-tab-pane" type="button" role="tab" aria-controls="ingredients-tab-pane" aria-selected="false">Ingredients</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link link-light" id="instructions-tab" data-bs-toggle="tab" data-bs-target="#instructions-tab-pane" type="button" role="tab" aria-controls="instructions-tab-pane" aria-selected="false">Instructions</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link link-light" id="utilities-tab" data-bs-toggle="tab" data-bs-target="#utilities-tab-pane" type="button" role="tab" aria-controls="utilities-tab-pane" aria-selected="false">Utilities</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link link-light" id="notes-tab" data-bs-toggle="tab" data-bs-target="#notes-tab-pane" type="button" role="tab" aria-controls="notes-tab-pane" aria-selected="false">Notes</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link link-light" id="metadata-tab" data-bs-toggle="tab" data-bs-target="#metadata-tab-pane" type="button" role="tab" aria-controls="metadata-tab-pane" aria-selected="false">Metadata</button>
+            </li>
+        </ul>
+        <div class="tab-content mb-2" id="tab-content">
+            <section class="tab-pane show active" id="main-tab-pane" role="tabpanel" aria-labelledby="main-tab" tabindex="0">
+                <div class="row mb-2">
+                    <div class="col">
+                        <div class="form-floating">
+                            <input type="text" class="form-control" id="name" @bind="Recipe.Name" placeholder="">
+                            <label for="name">Name</label>
                         </div>
                     </div>
-                    <button type="button" class="btn btn-success" @onclick="() => AddNote(ingredient)">+ Note</button>
-                    <button type="button" class="btn btn-danger" @onclick="() => RemoveIngredient(ingredient)">&times;</button>
                 </div>
-            </div>
-            @for (int i = 0; i < ingredient.Notes.Count; i++)
-            {
-                var index = i;
                 <div class="row mb-2">
+                    <div class="col">
+                        <div class="form-floating">
+                            <textarea class="form-control" id="description" @bind="Recipe.Description" placeholder=""></textarea>
+                            <label for="description">Description</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="row mb-2">
+                    <div class="col">
+                        <div class="form-floating">
+                            <input type="text" class="form-control" id="source" @bind="Recipe.Source" placeholder="" />
+                            <label for="source">Source</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="row mb-2">
+                    <div class="col-lg">
+                        <div class="form-floating">
+                            <input type="number" class="form-control" id="servings" @bind="Recipe.Servings" placeholder="" required />
+                            <label for="source">Servings</label>
+                        </div>
+                    </div>
+                    <div class="col-lg">
+                        <div class="form-floating">
+                            <input type="number" class="form-control" id="prep-time" @bind="Recipe.PrepTime" placeholder="" />
+                            <label for="source">Preparation time</label>
+                        </div>
+                    </div>
+                    <div class="col-lg">
+                        <div class="form-floating">
+                            <input type="number" class="form-control" id="cook-time" @bind="Recipe.CookTime" placeholder="" />
+                            <label for="source">Cooking time</label>
+                        </div>
+                    </div>
+                </div>
+                <fieldset class="row">
+                    <legend class="ps-3">Tags</legend>
+                    <div class="col">
+                        @foreach (var tag in KnownTags)
+                        {
+                            <div class="btn-group mb-2 me-2">
+                                <input type="checkbox" class="btn-check" id="@tag" name="tags" @onchange="e => UpdateTagSelection(tag, Convert.ToBoolean(e.Value))" checked="@Recipe.Tags.Contains(tag)">
+                                <label class="btn btn-sm btn-outline-warning" for="@tag">@tag</label>
+                            </div>
+                        }
+                    </div>
                     <div class="input-group">
                         <div class="form-floating">
-                            <input type="text" class="form-control" id="note-value" @bind="ingredient.Notes[index]" placeholder="" />
-                            <label for="note-value">Note</label>
+                            <input type="text" class="form-control" id="new-tag" @bind="newTag" placeholder="" />
+                            <label for="new-tag">Tag</label>
                         </div>
-                        <button type="button" class="btn btn-danger" @onclick="() => RemoveNote(ingredient, index)">&times;</button>
+                        <button type="button" class="btn btn-success" @onclick="AddTag">+</button>
                     </div>
-                </div>
-            }
-        }
-        <div class="input-group">
-            <div class="form-floating">
-                <input type="text" class="form-control" id="new-ingredient" @bind="newIngredient" placeholder="" />
-                <label for="new-ingredient">Ingredient</label>
-            </div>
-            <button type="button" class="btn btn-success" @onclick="AddIngredient">+</button>
-        </div>
-    </fieldset>
-    <fieldset class="mb-2">
-        <legend>Utilities</legend>
-        @for (int i = 0; i < Recipe.Utilities.Count; i++)
-        {
-            var index = i;
-            <div class="row mb-2">
+                </fieldset>
+            </section>
+            <section class="tab-pane show" id="ingredients-tab-pane" role="tabpanel" aria-labelledby="ingredients-tab" tabindex="0">
+                @foreach (var ingredient in Recipe.Ingredients)
+                {
+                    <div class="row mb-2">
+                        <div class="input-group">
+                            <div class="form-floating">
+                                <input type="text" class="form-control" id="ingredient-name" @bind="ingredient.Name" placeholder="" />
+                                <label for="ingredient-name">Name</label>
+                            </div>
+                            <div class="form-floating">
+                                <input type="number" class="form-control" id="ingredient-quantity" @bind="ingredient.Quantity" placeholder="" />
+                                <label for="ingredient-quantity">Quantity</label>
+                            </div>
+                            <div class="form-floating">
+                                <input type="text" class="form-control" id="ingredient-unit" @bind="ingredient.Unit" placeholder="" />
+                                <label for="ingredient-unit">Unit</label>
+                            </div>
+                            <div class="input-group-text">
+                                <div class="form-check">
+                                    <input id="ingredient-isScaling" type="checkbox" @bind="ingredient.IsScaling" class="form-check-input" />
+                                    <label for="ingredient-isScaling" class="form-check-label">Scaling</label>
+                                </div>
+                            </div>
+                            <button type="button" class="btn btn-success" @onclick="() => AddNote(ingredient)">+ Note</button>
+                            <button type="button" class="btn btn-danger" @onclick="() => RemoveIngredient(ingredient)">&times;</button>
+                        </div>
+                    </div>
+                    @for (int i = 0; i < ingredient.Notes.Count; i++)
+                    {
+                        var index = i;
+                        <div class="row mb-2">
+                            <div class="input-group">
+                                <div class="form-floating">
+                                    <input type="text" class="form-control" id="note-value" @bind="ingredient.Notes[index]" placeholder="" />
+                                    <label for="note-value">Note</label>
+                                </div>
+                                <button type="button" class="btn btn-danger" @onclick="() => RemoveNote(ingredient, index)">&times;</button>
+                            </div>
+                        </div>
+                    }
+                }
                 <div class="input-group">
                     <div class="form-floating">
-                        <input type="text" class="form-control" id="utility-value" @bind="Recipe.Utilities[index]" placeholder="" />
-                        <label for="utility-value">Utility</label>
+                        <input type="text" class="form-control" id="new-ingredient" @bind="newIngredient" placeholder="" />
+                        <label for="new-ingredient">Ingredient</label>
                     </div>
-                    <button type="button" class="btn btn-danger" @onclick="() => RemoveUtility(index)">&times;</button>
+                    <button type="button" class="btn btn-success" @onclick="AddIngredient">+</button>
                 </div>
-            </div>
-        }
-        <div class="input-group">
-            <div class="form-floating">
-                <input type="text" class="form-control" id="new-utility" @bind="newUtility" placeholder="" />
-                <label for="new-utility">Utility</label>
-            </div>
-            <button type="button" class="btn btn-success" @onclick="AddUtility">+</button>
-        </div>
-    </fieldset>
-    <fieldset class="mb-2">
-        <legend>Instructions</legend>
-        @for (int i = 0; i < Recipe.Instructions.Count; i++)
-        {
-            var index = i;
-            <div class="row mb-2">
+            </section>
+            <section class="tab-pane show" id="instructions-tab-pane" role="tabpanel" aria-labelledby="instructions-tab" tabindex="0">
+                @for (int i = 0; i < Recipe.Instructions.Count; i++)
+                {
+                    var index = i;
+                    <div class="row mb-2">
+                        <div class="input-group">
+                            <div class="form-floating">
+                                <input type="text" class="form-control" id="instruction-value" @bind="Recipe.Instructions[index]" placeholder="" />
+                                <label for="instruction-value">Instruction</label>
+                            </div>
+                            <button type="button" class="btn btn-danger" @onclick="() => RemoveInstruction(index)">&times;</button>
+                        </div>
+                    </div>
+                }
                 <div class="input-group">
                     <div class="form-floating">
-                        <input type="text" class="form-control" id="instruction-value" @bind="Recipe.Instructions[index]" placeholder="" />
-                        <label for="instruction-value">Instruction</label>
+                        <input type="text" class="form-control" id="new-instruction" @bind="newInstruction" placeholder="" />
+                        <label for="new-instruction">Instruction</label>
                     </div>
-                    <button type="button" class="btn btn-danger" @onclick="() => RemoveInstruction(index)">&times;</button>
+                    <button type="button" class="btn btn-success" @onclick="AddInstruction">+</button>
                 </div>
-            </div>
-        }
-        <div class="input-group">
-            <div class="form-floating">
-                <input type="text" class="form-control" id="new-instruction" @bind="newInstruction" placeholder="" />
-                <label for="new-instruction">Instruction</label>
-            </div>
-            <button type="button" class="btn btn-success" @onclick="AddInstruction">+</button>
-        </div>
-    </fieldset>
-    <fieldset class="mb-2">
-        <legend>Notes</legend>
-        @for (int i = 0; i < Recipe.Notes.Count; i++)
-        {
-            var index = i;
-            <div class="row mb-2">
+            </section>
+            <section class="tab-pane show" id="utilities-tab-pane" role="tabpanel" aria-labelledby="utilities-tab" tabindex="0">
+                @for (int i = 0; i < Recipe.Utilities.Count; i++)
+                {
+                    var index = i;
+                    <div class="row mb-2">
+                        <div class="input-group">
+                            <div class="form-floating">
+                                <input type="text" class="form-control" id="utility-value" @bind="Recipe.Utilities[index]" placeholder="" />
+                                <label for="utility-value">Utility</label>
+                            </div>
+                            <button type="button" class="btn btn-danger" @onclick="() => RemoveUtility(index)">&times;</button>
+                        </div>
+                    </div>
+                }
                 <div class="input-group">
                     <div class="form-floating">
-                        <input type="text" class="form-control" id="note-value" @bind="Recipe.Notes[index]" placeholder="" />
-                        <label for="note-value">Note</label>
+                        <input type="text" class="form-control" id="new-utility" @bind="newUtility" placeholder="" />
+                        <label for="new-utility">Utility</label>
                     </div>
-                    <button type="button" class="btn btn-danger" @onclick="() => RemoveNote(index)">&times;</button>
+                    <button type="button" class="btn btn-success" @onclick="AddUtility">+</button>
                 </div>
-            </div>
-        }
-        <div class="input-group">
-            <div class="form-floating">
-                <input type="text" class="form-control" id="new-note" @bind="newNote" placeholder="" />
-                <label for="new-note">Note</label>
-            </div>
-            <button type="button" class="btn btn-success" @onclick="AddNote">+</button>
-        </div>
-    </fieldset>
-    <fieldset class="mb-2">
-        <legend>Metadata</legend>
-        @foreach (var item in Recipe.Metadata)
-        {
-            <div class="row mb-2">
+            </section>
+            <section class="tab-pane show" id="notes-tab-pane" role="tabpanel" aria-labelledby="notes-tab" tabindex="0">
+                @for (int i = 0; i < Recipe.Notes.Count; i++)
+                {
+                    var index = i;
+                    <div class="row mb-2">
+                        <div class="input-group">
+                            <div class="form-floating">
+                                <input type="text" class="form-control" id="note-value" @bind="Recipe.Notes[index]" placeholder="" />
+                                <label for="note-value">Note</label>
+                            </div>
+                            <button type="button" class="btn btn-danger" @onclick="() => RemoveNote(index)">&times;</button>
+                        </div>
+                    </div>
+                }
                 <div class="input-group">
                     <div class="form-floating">
-                        <input type="text" class="form-control" id="metadata-key" value="@item.Key" placeholder="" readonly />
-                        <label for="metadata-key">Key</label>
+                        <input type="text" class="form-control" id="new-note" @bind="newNote" placeholder="" />
+                        <label for="new-note">Note</label>
+                    </div>
+                    <button type="button" class="btn btn-success" @onclick="AddNote">+</button>
+                </div>
+            </section>
+            <section class="tab-pane show" id="metadata-tab-pane" role="tabpanel" aria-labelledby="metadata-tab" tabindex="0">
+                @foreach (var item in Recipe.Metadata)
+                {
+                    <div class="row mb-2">
+                        <div class="input-group">
+                            <div class="form-floating">
+                                <input type="text" class="form-control" id="metadata-key" value="@item.Key" placeholder="" readonly />
+                                <label for="metadata-key">Key</label>
+                            </div>
+                            <div class="form-floating">
+                                <input type="text" class="form-control" id="metadata-value" value="@item.Value" placeholder="" @onchange="(e) => Recipe.Metadata[item.Key] = e.Value?.ToString() ?? string.Empty" />
+                                <label for="metadata-value">Value</label>
+                            </div>
+                            <button type="button" class="btn btn-danger" @onclick="() => RemoveMetadata(item.Key)">&times;</button>
+                        </div>
+                    </div>
+                }
+                <div class="input-group">
+                    <div class="form-floating">
+                        <input type="text" class="form-control" id="new-metadata-key" @bind="@newMetadataKey" placeholder="" />
+                        <label for="new-metadata-key">Key</label>
                     </div>
                     <div class="form-floating">
-                        <input type="text" class="form-control" id="metadata-value" value="@item.Value" placeholder="" @onchange="(e) => Recipe.Metadata[item.Key] = e.Value?.ToString() ?? string.Empty" />
-                        <label for="metadata-value">Value</label>
+                        <input type="text" class="form-control" id="new-metadata-value" @bind="newMetadataValue" placeholder="" />
+                        <label for="new-metadata-value">Value</label>
                     </div>
-                    <button type="button" class="btn btn-danger" @onclick="() => RemoveMetadata(item.Key)">&times;</button>
+                    <button type="button" class="btn btn-success" @onclick="AddMetadata">+</button>
                 </div>
-            </div>
-        }
-        <div class="input-group">
-            <div class="form-floating">
-                <input type="text" class="form-control" id="new-metadata-key" @bind="@newMetadataKey" placeholder="" />
-                <label for="new-metadata-key">Key</label>
-            </div>
-            <div class="form-floating">
-                <input type="text" class="form-control" id="new-metadata-value" @bind="newMetadataValue" placeholder="" />
-                <label for="new-metadata-value">Value</label>
-            </div>
-            <button type="button" class="btn btn-success" @onclick="AddMetadata">+</button>
+            </section>
         </div>
-    </fieldset>
+    </section>
     <div class="row mb-2">
         <div class="col">
-            <button type="submit" class="btn btn-primary">Save</button>
+            <button type="button" class="btn btn-sm btn-info" @onclick="SaveRecipe">Save</button>
         </div>
     </div>
-</EditForm>
+</form>
 
 @code {
     [Parameter]
@@ -248,17 +280,15 @@
 
     protected override async Task OnInitializedAsync()
     {
-        await RecipeRepository.InitAsync();
-
         await RefreshData();
 
         if (Id != null)
-            Recipe = (await RecipeRepository.GetAsync(Id)) ?? new RecipeEntity { Id = Ulid.NewUlid().ToString() };
+            Recipe = (await DbContext.Recipes.GetAsync(Id)) ?? new RecipeEntity { Id = Ulid.NewUlid().ToString() };
     }
 
     protected async Task RefreshData()
     {
-        KnownTags = new List<string>(await RecipeRepository.GetTagsAsync());
+        KnownTags = new List<string>(await DbContext.Recipes.GetTagsAsync());
     }
 
     private async Task NewRecipe()
@@ -278,11 +308,14 @@
             if (!KnownTags.Contains(tag))
                 KnownTags.Add(tag);
         }
+
+        await Toaster.CreateToastAsync($"Recipe '{Recipe.Name}' loaded.");
     }
 
     private async Task SaveRecipe()
     {
-        await RecipeRepository.SetAsync(Recipe);
+        await DbContext.Recipes.SetAsync(Recipe);
+        await Toaster.CreateToastAsync($"Recipe '{Recipe.Name}' saved.");
 
         await RefreshData();
     }

@@ -2,22 +2,16 @@
 
 namespace OpenRecipe.WebEditor.Data
 {
-    public class EntityRepository<TEntity> where TEntity : class, IEntity
+    public class EntityContainer<TEntity> where TEntity : class, IEntity
     {
-        private readonly string _collectionName = typeof(TEntity).Name.ToLowerInvariant();
+        private readonly string _collectionName = typeof(TEntity).Name;
         private readonly IndexedDbAccessor _indexedDb;
 
         protected Dictionary<string, TEntity> Entities { get; } = [];
 
-        public EntityRepository(IndexedDbAccessor indexedDb)
+        public EntityContainer(IndexedDbAccessor indexedDb)
         {
             _indexedDb = indexedDb;
-        }
-
-        public async Task InitAsync()
-        {
-            await _indexedDb.InitializeAsync(_collectionName);
-            await RefreshAsync();
         }
 
         public async Task RefreshAsync()

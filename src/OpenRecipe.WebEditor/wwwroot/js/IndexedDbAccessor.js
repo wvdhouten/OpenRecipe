@@ -1,17 +1,19 @@
 ﻿let DATABASE_NAME = "Open Recipe";
-let CURRENT_VERSION = 1;
 
-export function initialize(collectionName) {
-    let request = indexedDB.open(DATABASE_NAME, CURRENT_VERSION);
+export function initialize(dbVersion, collectionNames) {
+    let request = indexedDB.open(DATABASE_NAME, dbVersion);
     request.onupgradeneeded = function () {
         let db = request.result;
-        db.createObjectStore(collectionName, { keyPath: "id" });
+        collectionNames.forEach(collectionName => {
+            if (!db.objectStoreNames.contains(collectionName))
+                db.createObjectStore(collectionName, { keyPath: "id" });
+        });
     }
 }
 
 export async function getAll(collectionName) {
     let request = new Promise((resolve) => {
-        let db = indexedDB.open(DATABASE_NAME, CURRENT_VERSION);
+        let db = indexedDB.open(DATABASE_NAME);
         db.onsuccess = function () {
             let transaction = db.result.transaction(collectionName, "readonly");
             let collection = transaction.objectStore(collectionName);
@@ -28,7 +30,7 @@ export async function getAll(collectionName) {
 
 export async function get(collectionName, id) {
     let request = new Promise((resolve) => {
-        let db = indexedDB.open(DATABASE_NAME, CURRENT_VERSION);
+        let db = indexedDB.open(DATABASE_NAME);
         db.onsuccess = function () {
             let transaction = db.result.transaction(collectionName, "readonly");
             let collection = transaction.objectStore(collectionName);
@@ -44,7 +46,7 @@ export async function get(collectionName, id) {
 }
 
 export function set(collectionName, value) {
-    let request = indexedDB.open(DATABASE_NAME, CURRENT_VERSION);
+    let request = indexedDB.open(DATABASE_NAME);
     request.onsuccess = function () {
         let transaction = request.result.transaction(collectionName, "readwrite");
         let collection = transaction.objectStore(collectionName)
@@ -53,7 +55,7 @@ export function set(collectionName, value) {
 }
 
 export function remove(collectionName, value) {
-    let request = indexedDB.open(DATABASE_NAME, CURRENT_VERSION);
+    let request = indexedDB.open(DATABASE_NAME);
     request.onsuccess = function () {
         let transaction = request.result.transaction(collectionName, "readwrite");
         let collection = transaction.objectStore(collectionName)
@@ -62,7 +64,7 @@ export function remove(collectionName, value) {
 }
 
 export function clear(collectionName) {
-    let request = indexedDB.open(DATABASE_NAME, CURRENT_VERSION);
+    let request = indexedDB.open(DATABASE_NAME);
     request.onsuccess = function () {
         let transaction = request.result.transaction(collectionName, "readwrite");
         let collection = transaction.objectStore(collectionName)

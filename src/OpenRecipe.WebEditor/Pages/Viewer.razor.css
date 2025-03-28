@@ -1,25 +1,22 @@
-﻿article > header,
-article > section {
-  background-color: rgba(255, 106, 0, 0.1);
+﻿article > header {
   border-radius: 8px;
   padding-top: .5em;
   padding-bottom: .5em;
   margin-bottom: .5em;
 }
 
-.list-group {
-  padding-left: calc(var(--bs-gutter-x)* .5);
-}
-
   .list-group label > input {
     margin-right: .5em;
-  }
-
-  .list-group label > input:not(:checked) {
-    border: 1px solid rgba(0, 0, 0, .7);
   }
 
 .list-group-item > label {
   display: flex;
   align-items: center;
+}
+
+.tab-content {
+  padding: .25em;
+  border-width: 0 var(--bs-border-width) var(--bs-border-width) var(--bs-border-width);
+  border-style: solid;
+  border-color: var(--bs-border-color);
 }

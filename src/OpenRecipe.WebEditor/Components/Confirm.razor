@@ -1,0 +1,61 @@
+﻿@typeparam TContext
+
+@if (IsVisible)
+{
+    <div class="modal fade show d-block" id="confirm-modal" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="confirm-modal-title">@Title</h5>
+                    <button type="button" class="btn-close" aria-label="Close" @onclick="() => OnConfirmationChange(false)"></button>
+                </div>
+                <div class="modal-body">
+                    @Message
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" @onclick="() => OnConfirmationChange(false)">Cancel</button>
+                    <button type="button" class="btn btn-sm btn-info" @onclick="() => OnConfirmationChange(true)">@ButtonText</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    protected bool IsVisible { get; set; }
+
+    [Parameter]
+    public TContext Context { get; set; } = default(TContext)!;
+
+    [Parameter]
+    public string Title { get; set; } = string.Empty;
+
+    [Parameter]
+    public string Message { get; set; } = string.Empty;
+
+    [Parameter]
+    public string ButtonText { get; set; } = "Confirm";
+
+    public void Show(TContext context, string? title = null, string? message = null)
+    {
+        Context = context;
+        if (title is not null)
+            Title = title;
+
+        if (message is not null)
+            Message = message;
+
+        IsVisible = true;
+        StateHasChanged();
+    }
+
+    [Parameter]
+    public EventCallback<TContext> OnConfirm { get; set; }
+
+    protected async Task OnConfirmationChange(bool isConfirmed)
+    {
+        IsVisible = false;
+        if (isConfirmed)
+            await OnConfirm.InvokeAsync(Context);
+    }
+}

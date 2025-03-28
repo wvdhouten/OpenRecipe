@@ -1,6 +1,8 @@
 ﻿@inherits LayoutComponentBase
+@inject Toaster Toaster
+
 <div class="page">
-    <div class="sidebar">
+    <div class="sidebar bg-primary-subtle">
         <NavMenu />
     </div>
     <main>
@@ -9,3 +11,5 @@
         </article>
     </main>
 </div>
+
+<Toaster @ref="Toaster" />

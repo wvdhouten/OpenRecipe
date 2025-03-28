@@ -112,3 +112,25 @@ code {
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
   text-align: start;
 }
+
+.form-check-input {
+  border-color: white;
+}
+
+  .form-check-input:checked[type="checkbox"] {
+    background-color: RGBA(var(--bs-warning-rgb),var(--bs-bg-opacity,1));
+    border-color: RGBA(var(--bs-warning-rgb),var(--bs-bg-opacity,1));
+    --bs-form-check-bg-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3e%3cpath fill='none' stroke='%23000' stroke-linecap='round' stroke-linejoin='round' stroke-width='3' d='m6 10 3 3 6-6'/%3e%3c/svg%3e");
+  }
+
+.nav-tabs {
+  overflow-x: auto;
+  overflow-y: hidden;
+  display: -webkit-box;
+  display: -moz-box;
+  flex-wrap: initial;
+}
+
+  .nav-tabs > li {
+    float: none;
+  }

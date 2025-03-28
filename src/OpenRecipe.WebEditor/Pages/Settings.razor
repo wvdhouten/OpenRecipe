@@ -1,11 +1,12 @@
 ﻿@using System.Text.Json;
+@using Octokit
 @using OpenRecipe.Serialization
 @using OpenRecipe.WebEditor.Data;
 @using OpenRecipe.WebEditor.Models
 @using OpenRecipe.WebEditor.Models.Git
 @using OpenRecipe.WebEditor.Utils
 @using System.Text.RegularExpressions
-@inject RecipeRepository RecipeRepository
+@inject StorageContext DbContext
 @inject IJSRuntime JS
 @page "/settings"
 
@@ -42,24 +43,32 @@
     <div class="row mb-2">
         <div class="col-lg">
             <div class="form-floating">
-                <input type="text" class="form-control" id="name" @bind="GitUser" placeholder="">
-                <label for="name">GitHub User</label>
+                <input type="text" class="form-control" id="git-user" @bind="GitUser" placeholder="">
+                <label for="git-user">GitHub User</label>
             </div>
         </div>
         <div class="col-lg">
             <div class="form-floating">
-                <input type="text" class="form-control" id="name" @bind="GitRepository" placeholder="">
-                <label for="name">GitHub Repository</label>
+                <input type="text" class="form-control" id="git-repository" @bind="GitRepository" placeholder="">
+                <label for="git-repository">GitHub Repository</label>
             </div>
         </div>
         <div class="col-lg">
             <div class="form-floating">
-                <input type="text" class="form-control" id="name" @bind="GitBranch" placeholder="">
-                <label for="name">GitHub Branch</label>
+                <input type="text" class="form-control" id="git-branch" @bind="GitBranch" placeholder="">
+                <label for="git-branch">GitHub Branch</label>
             </div>
         </div>
         <div class="col-lg-auto">
             <button type="button" class="btn btn-primary" @onclick="ImportRepositoryAsync">ImportRepository</button>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-lg">
+            <div class="form-floating">
+                <input type="password" class="form-control" id="git-pat" @bind="GitPat" placeholder="">
+                <label for="git-pat">GitHub PAT</label>
+            </div>
         </div>
     </div>
 </section>
@@ -70,21 +79,25 @@
     private string GitUser = "wvdhouten";
     private string GitRepository = "recipes";
     private string GitBranch = "main";
+    private string GitPat = string.Empty;
 
     protected override async Task OnInitializedAsync()
     {
-        await RecipeRepository.InitAsync();
+        var patSetting = await DbContext.Settings.GetAsync(nameof(GitPat));
+        GitPat = patSetting?.Value ?? string.Empty;
+
         await UpdateCountsAsync();
     }
 
     private async Task ClearAsync()
     {
-        await RecipeRepository.ClearAsync();
+        await DbContext.Recipes.ClearAsync();
         await UpdateCountsAsync();
     }
 
-    private async Task UpdateCountsAsync() {
-        RecipeCount = (await RecipeRepository.GetAsync()).Count();
+    private async Task UpdateCountsAsync()
+    {
+        RecipeCount = (await DbContext.Recipes.GetAsync()).Count();
     }
 
     private async Task ImportRepositoryAsync()
@@ -119,7 +132,7 @@
         var recipe = RecipeSerializer.Deserialize<RecipeEntity>(content);
         recipe.Id ??= Ulid.NewUlid().ToString();
 
-        await RecipeRepository.SetAsync(recipe);
+        await DbContext.Recipes.SetAsync(recipe);
     }
 
     private async Task ImportArchiveAsync(InputFileChangeEventArgs e)
@@ -137,7 +150,7 @@
         {
             var recipe = RecipeSerializer.Deserialize<RecipeEntity>(content);
             recipe.Id ??= Ulid.NewUlid().ToString();
-            await RecipeRepository.SetAsync(recipe);
+            await DbContext.Recipes.SetAsync(recipe);
         }
 
         await UpdateCountsAsync();
@@ -145,7 +158,7 @@
 
     private async Task ExportArchiveAsync()
     {
-        var recipes = await RecipeRepository.GetAsync();
+        var recipes = await DbContext.Recipes.GetAsync();
 
         var contents = recipes.Select(recipe => (recipe.Id!, RecipeSerializer.Serialize(recipe)));
         using var stream = await ArchiveUtil.PackAsync(contents);

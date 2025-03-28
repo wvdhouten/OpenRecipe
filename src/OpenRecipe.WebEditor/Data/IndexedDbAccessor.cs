@@ -12,13 +12,13 @@ public class IndexedDbAccessor : IAsyncDisposable
         _jsRuntime = jsRuntime;
     }
 
-    public async Task InitializeAsync(string collectionName)
+    internal async Task InitializeAsync(IEnumerable<string> collections)
     {
         await WaitForReference();
-        await _accessorJsRef.Value.InvokeVoidAsync("initialize", collectionName);
+        await _accessorJsRef.Value.InvokeVoidAsync("initialize", DateTime.Now.ToString("yyyyMMddhhmmss"), collections);
     }
 
-    public async Task<IEnumerable<T>> GetAllAsync<T>(string collectionName)
+    internal async Task<IEnumerable<T>> GetAllAsync<T>(string collectionName)
     {
         await WaitForReference();
         var result = await _accessorJsRef.Value.InvokeAsync<IEnumerable<T>>("getAll", collectionName);
@@ -26,7 +26,7 @@ public class IndexedDbAccessor : IAsyncDisposable
         return result;
     }
 
-    public async Task<T> GetValueAsync<T>(string collectionName, string id)
+    internal async Task<T> GetValueAsync<T>(string collectionName, string id)
     {
         await WaitForReference();
         var result = await _accessorJsRef.Value.InvokeAsync<T>("get", collectionName, id);
@@ -34,19 +34,19 @@ public class IndexedDbAccessor : IAsyncDisposable
         return result;
     }
 
-    public async Task SetValueAsync<T>(string collectionName, T value)
+    internal async Task SetValueAsync<T>(string collectionName, T value)
     {
         await WaitForReference();
         await _accessorJsRef.Value.InvokeVoidAsync("set", collectionName, value);
     }
 
-    public async Task RemoveValueAsync<T>(string collectionName, string id)
+    internal async Task RemoveValueAsync<T>(string collectionName, string id)
     {
         await WaitForReference();
         await _accessorJsRef.Value.InvokeVoidAsync("remove", collectionName, id);
     }
 
-    public async Task ClearAsync(string collectionName)
+    internal async Task ClearAsync(string collectionName)
     {
         await WaitForReference();
         await _accessorJsRef.Value.InvokeVoidAsync("clear", collectionName);
@@ -54,7 +54,7 @@ public class IndexedDbAccessor : IAsyncDisposable
 
     private async Task WaitForReference()
     {
-        if (_accessorJsRef.IsValueCreated is false)
+        if (!_accessorJsRef.IsValueCreated)
             _accessorJsRef = new(await _jsRuntime.InvokeAsync<IJSObjectReference>("import", "/js/IndexedDbAccessor.js"));
     }
 

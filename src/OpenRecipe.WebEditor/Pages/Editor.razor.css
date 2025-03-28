@@ -1,0 +1,6 @@
+﻿.tab-content {
+  padding: .25em;
+  border-width: 0 var(--bs-border-width) var(--bs-border-width) var(--bs-border-width);
+  border-style: solid;
+  border-color: var(--bs-border-color);
+}

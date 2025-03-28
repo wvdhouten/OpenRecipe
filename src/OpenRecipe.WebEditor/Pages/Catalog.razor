@@ -2,11 +2,23 @@
 @using OpenRecipe.WebEditor.Data;
 @using OpenRecipe.WebEditor.Extensions
 @using OpenRecipe.WebEditor.Models
-@inject RecipeRepository RecipeRepository
+@inject StorageContext DbContext
+@inject Toaster Toaster
 @page "/"
 @page "/catalog"
 
-<h3>Catalog</h3>
+<PageTitle>Recipe Catalog</PageTitle>
+<section class="row mb-2">
+    <div class="col-auto">
+        <NavLink class="link-info" href="@($"/editor")">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-plus-circle" viewBox="0 0 16 16">
+                <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16" />
+                <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4" />
+            </svg>
+        </NavLink>
+    </div>
+</section>
+<hr />
 <section>
     <form class="form-horizontal">
         <div class="row mb-2">
@@ -29,14 +41,14 @@
                 {
                     <div class="btn-group mb-2 me-2">
                         <input type="checkbox" class="btn-check" id="@tag" name="tags" @onchange="e => UpdateTagSelection(tag, Convert.ToBoolean(e.Value))">
-                        <label class="btn btn-outline-primary" for="@tag">@tag</label>
+                        <label class="btn btn-sm btn-outline-warning" for="@tag">@tag</label>
                     </div>
                 }
             </div>
         </div>
         <div class="row mb-2">
             <div class="col">
-                <button type="submit" class="btn btn-primary" @onclick="ExecuteFilter">Filter</button>
+                <button type="button" class="btn btn-sm btn-info" @onclick="ApplyFilterAsync">Filter</button>
             </div>
         </div>
     </form>
@@ -56,23 +68,24 @@
                 <tr>
                     <th scope="row">@item.Name</th>
                     <td>
-                        <NavLink href="@($"/viewer/{item.Id}")">
+                        <NavLink class="link-info" href="@($"/viewer/{item.Id}")">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-search" viewBox="0 0 16 16">
                                 <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0" />
                             </svg>
                         </NavLink>
-                        <NavLink href="@($"/editor/{item.Id}")">
+                        <NavLink class="link-info" href="@($"/editor/{item.Id}")">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-pencil-square" viewBox="0 0 16 16">
                                 <path d="M15.502 1.94a.5.5 0 0 1 0 .706L14.459 3.69l-2-2L13.502.646a.5.5 0 0 1 .707 0l1.293 1.293zm-1.75 2.456-2-2L4.939 9.21a.5.5 0 0 0-.121.196l-.805 2.414a.25.25 0 0 0 .316.316l2.414-.805a.5.5 0 0 0 .196-.12l6.813-6.814z" />
                                 <path fill-rule="evenodd" d="M1 13.5A1.5 1.5 0 0 0 2.5 15h11a1.5 1.5 0 0 0 1.5-1.5v-6a.5.5 0 0 0-1 0v6a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5v-11a.5.5 0 0 1 .5-.5H9a.5.5 0 0 0 0-1H2.5A1.5 1.5 0 0 0 1 2.5z" />
                             </svg>
                         </NavLink>
-                        <a href="#delete" @onclick="() => DeleteRecipeAsync(item.Id)">
+                        <a class="link-info" role="button" @onclick="() => DeleteRecipe(item)">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash" viewBox="0 0 16 16">
                                 <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z" />
                                 <path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3h11V2h-11z" />
                             </svg>
                         </a>
+                        <Confirm @ref="ConfirmDeleteModal" TContext="RecipeEntity" Title="Delete recipe?" OnConfirm="ConfirmDeleteRecipeAsync"></Confirm>
                     </td>
                 </tr>
             }
@@ -81,6 +94,8 @@
 </section>
 
 @code {
+    Confirm<RecipeEntity> ConfirmDeleteModal = null!;
+
     int RecipeCount = 0;
     IEnumerable<string> KnownTags = [];
 
@@ -92,10 +107,8 @@
 
     protected override async Task OnInitializedAsync()
     {
-        await RecipeRepository.InitAsync();
-
-        SearchResults = await RecipeRepository.GetAsync();
-        KnownTags = await RecipeRepository.GetTagsAsync();
+        SearchResults = await DbContext.Recipes.GetAsync();
+        KnownTags = await DbContext.Recipes.GetTagsAsync();
         RecipeCount = SearchResults.Count();
     }
 
@@ -107,9 +120,9 @@
             SelectedTags.Remove(tag);
     }
 
-    private async Task ExecuteFilter()
+    private async Task ApplyFilterAsync()
     {
-        SearchResults = await RecipeRepository.GetAsync(
+        SearchResults = await DbContext.Recipes.GetAsync(
             e => MatchesNameFilter(e)
             && MatchesIngredientFilter(e)
             && MatchesTagFilter(e)
@@ -133,17 +146,24 @@
         return SelectedTags.All(entity.Tags.Contains);
     }
 
-    private async Task DeleteRecipeAsync(string? id)
+    private void DeleteRecipe(RecipeEntity entity)
     {
-        if (string.IsNullOrWhiteSpace(id))
+        ConfirmDeleteModal.Show(entity, message: $"Are you sure you want to delete '{entity.Name}'?");
+    }
+
+    private async Task ConfirmDeleteRecipeAsync(RecipeEntity entity)
+    {
+        if (string.IsNullOrWhiteSpace(entity.Id))
             return;
 
-        await RecipeRepository.RemoveAsync(id);
+        await DbContext.Recipes.RemoveAsync(entity.Id);
 
-        var allRecipes = await RecipeRepository.GetAsync();
-        KnownTags = await RecipeRepository.GetTagsAsync();
+        var allRecipes = await DbContext.Recipes.GetAsync();
+        KnownTags = await DbContext.Recipes.GetTagsAsync();
         RecipeCount = allRecipes.Count();
 
-        await ExecuteFilter();
+        await Toaster.CreateToastAsync($"Recipe '{entity.Name}' deleted.");
+
+        await ApplyFilterAsync();
     }
 }

@@ -2,11 +2,11 @@
 
 namespace OpenRecipe.WebEditor.Data
 {
-    public class RecipeRepository : EntityRepository<RecipeEntity>
+    public class RecipeContainer : EntityContainer<RecipeEntity>
     {
         private List<string> Tags { get; } = [];
 
-        public RecipeRepository(IndexedDbAccessor indexedDb) : base(indexedDb)
+        public RecipeContainer(IndexedDbAccessor indexedDb) : base(indexedDb)
         {
         }
 
