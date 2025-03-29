@@ -4,13 +4,13 @@ namespace OpenRecipe.WebEditor.Data
 {
     public class GitHubContext
     {
-        private readonly string _gitUser = string.Empty;
+        private readonly string _gitOwner = string.Empty;
         private readonly string _gitRepository = string.Empty;
         private readonly string _gitPat = string.Empty;
 
-        public GitHubContext(string gitUser, string gitRepository, string gitPat)
+        public GitHubContext(string gitOwner, string gitRepository, string gitPat)
         {
-            _gitUser = gitUser;
+            _gitOwner = gitOwner;
             _gitRepository = gitRepository;
             _gitPat = gitPat;
         }
@@ -22,7 +22,7 @@ namespace OpenRecipe.WebEditor.Data
                 Credentials = new Credentials(_gitPat)
             };
 
-            await client.Repository.Content.GetAllContents(_gitUser, _gitRepository);
+            await client.Repository.Content.GetAllContents(_gitOwner, _gitRepository);
         }
 
         public async Task<string> GetContent(string path)
@@ -32,7 +32,7 @@ namespace OpenRecipe.WebEditor.Data
                 Credentials = new Credentials(_gitPat)
             };
 
-            var contents = await client.Repository.Content.GetAllContents(_gitUser, _gitRepository, path);
+            var contents = await client.Repository.Content.GetAllContents(_gitOwner, _gitRepository, path);
             if (contents.Any())
                 return contents[0].Content;
 
@@ -46,13 +46,13 @@ namespace OpenRecipe.WebEditor.Data
                 Credentials = new Credentials(_gitPat)
             };
 
-            var existingContent = await client.Repository.Content.GetAllContentsByRef(_gitUser, _gitRepository, branch);
+            var existingContent = await client.Repository.Content.GetAllContentsByRef(_gitOwner, _gitRepository, branch);
             var existing = existingContent.FirstOrDefault(file => file.Path == path);
 
             if (existing != null)
-                await client.Repository.Content.UpdateFile(_gitUser, _gitRepository, path, new UpdateFileRequest($"Update {path}", content, existing.Sha, branch));
+                await client.Repository.Content.UpdateFile(_gitOwner, _gitRepository, path, new UpdateFileRequest($"Update {path}", content, existing.Sha, branch));
             else
-                await client.Repository.Content.CreateFile(_gitUser, _gitRepository, path, new CreateFileRequest($"Update {path}", content, branch));
+                await client.Repository.Content.CreateFile(_gitOwner, _gitRepository, path, new CreateFileRequest($"Update {path}", content, branch));
         }
     }
 }
