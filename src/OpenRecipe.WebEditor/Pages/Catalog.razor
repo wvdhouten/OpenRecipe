@@ -1,24 +1,20 @@
 ﻿@using System.Text.Json;
 @using OpenRecipe.WebEditor.Data;
 @using OpenRecipe.WebEditor.Extensions
+@using OpenRecipe.WebEditor.Infrastructure
 @using OpenRecipe.WebEditor.Models
-@inject StorageContext DbContext
-@inject Toaster Toaster
 @page "/"
 @page "/catalog"
 
 <PageTitle>Recipe Catalog</PageTitle>
-<section class="row mb-2">
-    <div class="col-auto">
-        <NavLink class="link-info" href="@($"/editor")">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-plus-circle" viewBox="0 0 16 16">
-                <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16" />
-                <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4" />
-            </svg>
-        </NavLink>
-    </div>
-</section>
-<hr />
+<div class="hstack gap-2 mb-2">
+    <NavLink class="btn btn-sm btn-info" href="@($"/editor")">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-plus-circle" viewBox="0 0 16 16">
+            <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16" />
+            <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4" />
+        </svg>
+    </NavLink>
+</div>
 <section>
     <form class="form-horizontal">
         <div class="row mb-2">
@@ -92,78 +88,3 @@
         </tbody>
     </table>
 </section>
-
-@code {
-    Confirm<RecipeEntity> ConfirmDeleteModal = null!;
-
-    int RecipeCount = 0;
-    IEnumerable<string> KnownTags = [];
-
-    IList<string> SelectedTags = [];
-    string NameFilter { get; set; } = string.Empty;
-    string IngredientFilter { get; set; } = string.Empty;
-
-    IEnumerable<RecipeEntity> SearchResults { get; set; } = [];
-
-    protected override async Task OnInitializedAsync()
-    {
-        SearchResults = await DbContext.Recipes.GetAsync();
-        KnownTags = await DbContext.Recipes.GetTagsAsync();
-        RecipeCount = SearchResults.Count();
-    }
-
-    private void UpdateTagSelection(string tag, bool isSelected)
-    {
-        if (isSelected)
-            SelectedTags.Add(tag);
-        else
-            SelectedTags.Remove(tag);
-    }
-
-    private async Task ApplyFilterAsync()
-    {
-        SearchResults = await DbContext.Recipes.GetAsync(
-            e => MatchesNameFilter(e)
-            && MatchesIngredientFilter(e)
-            && MatchesTagFilter(e)
-        );
-    }
-
-    private bool MatchesNameFilter(RecipeEntity entity)
-    {
-        return entity.Name.Contains(NameFilter, StringComparison.OrdinalIgnoreCase)
-        || (entity.Description != null
-            && entity.Description.Contains(NameFilter, StringComparison.OrdinalIgnoreCase));
-    }
-
-    private bool MatchesIngredientFilter(RecipeEntity entity)
-    {
-        return entity.Ingredients.Any(i => i.Name.Contains(IngredientFilter, StringComparison.OrdinalIgnoreCase));
-    }
-
-    private bool MatchesTagFilter(RecipeEntity entity)
-    {
-        return SelectedTags.All(entity.Tags.Contains);
-    }
-
-    private void DeleteRecipe(RecipeEntity entity)
-    {
-        ConfirmDeleteModal.Show(entity, message: $"Are you sure you want to delete '{entity.Name}'?");
-    }
-
-    private async Task ConfirmDeleteRecipeAsync(RecipeEntity entity)
-    {
-        if (string.IsNullOrWhiteSpace(entity.Id))
-            return;
-
-        await DbContext.Recipes.RemoveAsync(entity.Id);
-
-        var allRecipes = await DbContext.Recipes.GetAsync();
-        KnownTags = await DbContext.Recipes.GetTagsAsync();
-        RecipeCount = allRecipes.Count();
-
-        await Toaster.CreateToastAsync($"Recipe '{entity.Name}' deleted.");
-
-        await ApplyFilterAsync();
-    }
-}

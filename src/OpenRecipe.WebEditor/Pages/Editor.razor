@@ -2,33 +2,41 @@
 @using System.Text.Json;
 @using OpenRecipe.Serialization
 @using OpenRecipe.WebEditor.Data;
+@using OpenRecipe.WebEditor.Infrastructure
 @using OpenRecipe.WebEditor.Models
-@inject StorageContext DbContext
-@inject Toaster Toaster
 @page "/editor"
 @page "/editor/{Id}"
 
 <PageTitle>Recipe Editor</PageTitle>
-<section class="row mb-2">
-    <div class="col-auto">
-        <label for="file" class="link-secondary" role="button">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-upload" viewBox="0 0 16 16">
-                <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5" />
-                <path d="M7.646 1.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1-.708.708L8.5 2.707V11.5a.5.5 0 0 1-1 0V2.707L5.354 4.854a.5.5 0 1 1-.708-.708z" />
-            </svg>
-        </label>
-        <InputFile id="file" OnChange="LoadFile" hidden />
-    </div>
-    <div class="col-auto">
-        <a class="link-info" role="button" @onclick="NewRecipe">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-plus-circle" viewBox="0 0 16 16">
-                <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16" />
-                <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4" />
-            </svg>
-        </a>
-    </div>
-</section>
-<hr />
+
+<InputFile id="file" OnChange="LoadFile" hidden />
+
+<div class="hstack gap-2 mb-2">
+    <label for="file" class="btn btn-sm btn-secondary" role="button">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-upload" viewBox="0 0 16 16">
+            <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5" />
+            <path d="M7.646 1.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1-.708.708L8.5 2.707V11.5a.5.5 0 0 1-1 0V2.707L5.354 4.854a.5.5 0 1 1-.708-.708z" />
+        </svg>
+    </label>
+    <a class="btn btn-sm btn-info" role="button" @onclick="NewRecipe">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-plus-circle" viewBox="0 0 16 16">
+            <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16" />
+            <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4" />
+        </svg>
+    </a>
+    <button type="button" class="btn btn-sm btn-info ms-auto" title="Save" @onclick="SaveRecipe">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-floppy" viewBox="0 0 16 16">
+            <path d="M11 2H9v3h2z" />
+            <path d="M1.5 0h11.586a1.5 1.5 0 0 1 1.06.44l1.415 1.414A1.5 1.5 0 0 1 16 2.914V14.5a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 0 14.5v-13A1.5 1.5 0 0 1 1.5 0M1 1.5v13a.5.5 0 0 0 .5.5H2v-4.5A1.5 1.5 0 0 1 3.5 9h9a1.5 1.5 0 0 1 1.5 1.5V15h.5a.5.5 0 0 0 .5-.5V2.914a.5.5 0 0 0-.146-.353l-1.415-1.415A.5.5 0 0 0 13.086 1H13v4.5A1.5 1.5 0 0 1 11.5 7h-7A1.5 1.5 0 0 1 3 5.5V1H1.5a.5.5 0 0 0-.5.5m3 4a.5.5 0 0 0 .5.5h7a.5.5 0 0 0 .5-.5V1H4zM3 15h10v-4.5a.5.5 0 0 0-.5-.5h-9a.5.5 0 0 0-.5.5z" />
+        </svg>
+    </button>
+    <button type="button" class="btn btn-sm btn-info" title="Save" @onclick="CloudSaveRecipe">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-cloud-upload" viewBox="0 0 16 16">
+            <path fill-rule="evenodd" d="M4.406 1.342A5.53 5.53 0 0 1 8 0c2.69 0 4.923 2 5.166 4.579C14.758 4.804 16 6.137 16 7.773 16 9.569 14.502 11 12.687 11H10a.5.5 0 0 1 0-1h2.688C13.979 10 15 8.988 15 7.773c0-1.216-1.02-2.228-2.313-2.228h-.5v-.5C12.188 2.825 10.328 1 8 1a4.53 4.53 0 0 0-2.941 1.1c-.757.652-1.153 1.438-1.153 2.055v.448l-.445.049C2.064 4.805 1 5.952 1 7.318 1 8.785 2.23 10 3.781 10H6a.5.5 0 0 1 0 1H3.781C1.708 11 0 9.366 0 7.318c0-1.763 1.266-3.223 2.942-3.593.143-.863.698-1.723 1.464-2.383" />
+            <path fill-rule="evenodd" d="M7.646 4.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1-.708.708L8.5 5.707V14.5a.5.5 0 0 1-1 0V5.707L5.354 7.854a.5.5 0 1 1-.708-.708z" />
+        </svg>
+    </button>
+</div>
 <form class="form-horizontal">
     <section class="row">
         <ul class="nav nav-tabs" id="tab-list" role="tablist">
@@ -56,7 +64,7 @@
                 <div class="row mb-2">
                     <div class="col">
                         <div class="form-floating">
-                            <input type="text" class="form-control" id="name" @bind="Recipe.Name" placeholder="">
+                            <input type="text" class="form-control" id="name" @bind="Recipe.Name" placeholder="" autocomplete="off" />
                             <label for="name">Name</label>
                         </div>
                     </div>
@@ -72,7 +80,7 @@
                 <div class="row mb-2">
                     <div class="col">
                         <div class="form-floating">
-                            <input type="text" class="form-control" id="source" @bind="Recipe.Source" placeholder="" />
+                            <input type="text" class="form-control" id="source" @bind="Recipe.Source" placeholder="" autocomplete="off" />
                             <label for="source">Source</label>
                         </div>
                     </div>
@@ -80,19 +88,19 @@
                 <div class="row mb-2">
                     <div class="col-lg">
                         <div class="form-floating">
-                            <input type="number" class="form-control" id="servings" @bind="Recipe.Servings" placeholder="" required />
+                            <input type="number" class="form-control" id="servings" @bind="Recipe.Servings" placeholder="" required autocomplete="off" />
                             <label for="source">Servings</label>
                         </div>
                     </div>
                     <div class="col-lg">
                         <div class="form-floating">
-                            <input type="number" class="form-control" id="prep-time" @bind="Recipe.PrepTime" placeholder="" />
+                            <input type="number" class="form-control" id="prep-time" @bind="Recipe.PrepTime" placeholder="" autocomplete="off" />
                             <label for="source">Preparation time</label>
                         </div>
                     </div>
                     <div class="col-lg">
                         <div class="form-floating">
-                            <input type="number" class="form-control" id="cook-time" @bind="Recipe.CookTime" placeholder="" />
+                            <input type="number" class="form-control" id="cook-time" @bind="Recipe.CookTime" placeholder="" autocomplete="off" />
                             <label for="source">Cooking time</label>
                         </div>
                     </div>
@@ -103,14 +111,14 @@
                         @foreach (var tag in KnownTags)
                         {
                             <div class="btn-group mb-2 me-2">
-                                <input type="checkbox" class="btn-check" id="@tag" name="tags" @onchange="e => UpdateTagSelection(tag, Convert.ToBoolean(e.Value))" checked="@Recipe.Tags.Contains(tag)">
+                                <input type="checkbox" class="btn-check" id="@tag" name="tags" @onchange="e => UpdateTagSelection(tag, Convert.ToBoolean(e.Value))" checked="@Recipe.Tags.Contains(tag)" />
                                 <label class="btn btn-sm btn-outline-warning" for="@tag">@tag</label>
                             </div>
                         }
                     </div>
                     <div class="input-group">
                         <div class="form-floating">
-                            <input type="text" class="form-control" id="new-tag" @bind="newTag" placeholder="" />
+                            <input type="text" class="form-control" id="new-tag" @bind="newTag" placeholder="" autocomplete="off" />
                             <label for="new-tag">Tag</label>
                         </div>
                         <button type="button" class="btn btn-success" @onclick="AddTag">+</button>
@@ -123,20 +131,20 @@
                     <div class="row mb-2">
                         <div class="input-group">
                             <div class="form-floating">
-                                <input type="text" class="form-control" id="ingredient-name" @bind="ingredient.Name" placeholder="" />
+                                <input type="text" class="form-control" id="ingredient-name" @bind="ingredient.Name" placeholder="" autocomplete="off" />
                                 <label for="ingredient-name">Name</label>
                             </div>
                             <div class="form-floating">
-                                <input type="number" class="form-control" id="ingredient-quantity" @bind="ingredient.Quantity" placeholder="" />
+                                <input type="number" class="form-control" id="ingredient-quantity" @bind="ingredient.Quantity" placeholder="" autocomplete="off" />
                                 <label for="ingredient-quantity">Quantity</label>
                             </div>
                             <div class="form-floating">
-                                <input type="text" class="form-control" id="ingredient-unit" @bind="ingredient.Unit" placeholder="" />
+                                <input type="text" class="form-control" id="ingredient-unit" @bind="ingredient.Unit" placeholder="" autocomplete="off" />
                                 <label for="ingredient-unit">Unit</label>
                             </div>
                             <div class="input-group-text">
                                 <div class="form-check">
-                                    <input id="ingredient-isScaling" type="checkbox" @bind="ingredient.IsScaling" class="form-check-input" />
+                                    <input id="ingredient-isScaling" type="checkbox" @bind="ingredient.IsScaling" class="form-check-input" autocomplete="off" />
                                     <label for="ingredient-isScaling" class="form-check-label">Scaling</label>
                                 </div>
                             </div>
@@ -150,7 +158,7 @@
                         <div class="row mb-2">
                             <div class="input-group">
                                 <div class="form-floating">
-                                    <input type="text" class="form-control" id="note-value" @bind="ingredient.Notes[index]" placeholder="" />
+                                    <input type="text" class="form-control" id="note-value" @bind="ingredient.Notes[index]" placeholder="" autocomplete="off" />
                                     <label for="note-value">Note</label>
                                 </div>
                                 <button type="button" class="btn btn-danger" @onclick="() => RemoveNote(ingredient, index)">&times;</button>
@@ -160,7 +168,7 @@
                 }
                 <div class="input-group">
                     <div class="form-floating">
-                        <input type="text" class="form-control" id="new-ingredient" @bind="newIngredient" placeholder="" />
+                        <input type="text" class="form-control" id="new-ingredient" @bind="newIngredient" placeholder="" autocomplete="off" />
                         <label for="new-ingredient">Ingredient</label>
                     </div>
                     <button type="button" class="btn btn-success" @onclick="AddIngredient">+</button>
@@ -173,7 +181,7 @@
                     <div class="row mb-2">
                         <div class="input-group">
                             <div class="form-floating">
-                                <input type="text" class="form-control" id="instruction-value" @bind="Recipe.Instructions[index]" placeholder="" />
+                                <input type="text" class="form-control" id="instruction-value" @bind="Recipe.Instructions[index]" placeholder="" autocomplete="off" />
                                 <label for="instruction-value">Instruction</label>
                             </div>
                             <button type="button" class="btn btn-danger" @onclick="() => RemoveInstruction(index)">&times;</button>
@@ -182,7 +190,7 @@
                 }
                 <div class="input-group">
                     <div class="form-floating">
-                        <input type="text" class="form-control" id="new-instruction" @bind="newInstruction" placeholder="" />
+                        <input type="text" class="form-control" id="new-instruction" @bind="newInstruction" placeholder="" autocomplete="off" />
                         <label for="new-instruction">Instruction</label>
                     </div>
                     <button type="button" class="btn btn-success" @onclick="AddInstruction">+</button>
@@ -195,7 +203,7 @@
                     <div class="row mb-2">
                         <div class="input-group">
                             <div class="form-floating">
-                                <input type="text" class="form-control" id="utility-value" @bind="Recipe.Utilities[index]" placeholder="" />
+                                <input type="text" class="form-control" id="utility-value" @bind="Recipe.Utilities[index]" placeholder="" autocomplete="off" />
                                 <label for="utility-value">Utility</label>
                             </div>
                             <button type="button" class="btn btn-danger" @onclick="() => RemoveUtility(index)">&times;</button>
@@ -204,7 +212,7 @@
                 }
                 <div class="input-group">
                     <div class="form-floating">
-                        <input type="text" class="form-control" id="new-utility" @bind="newUtility" placeholder="" />
+                        <input type="text" class="form-control" id="new-utility" @bind="newUtility" placeholder="" autocomplete="off" />
                         <label for="new-utility">Utility</label>
                     </div>
                     <button type="button" class="btn btn-success" @onclick="AddUtility">+</button>
@@ -217,7 +225,7 @@
                     <div class="row mb-2">
                         <div class="input-group">
                             <div class="form-floating">
-                                <input type="text" class="form-control" id="note-value" @bind="Recipe.Notes[index]" placeholder="" />
+                                <input type="text" class="form-control" id="note-value" @bind="Recipe.Notes[index]" placeholder="" autocomplete="off" />
                                 <label for="note-value">Note</label>
                             </div>
                             <button type="button" class="btn btn-danger" @onclick="() => RemoveNote(index)">&times;</button>
@@ -226,7 +234,7 @@
                 }
                 <div class="input-group">
                     <div class="form-floating">
-                        <input type="text" class="form-control" id="new-note" @bind="newNote" placeholder="" />
+                        <input type="text" class="form-control" id="new-note" @bind="newNote" placeholder="" autocomplete="off" />
                         <label for="new-note">Note</label>
                     </div>
                     <button type="button" class="btn btn-success" @onclick="AddNote">+</button>
@@ -238,11 +246,11 @@
                     <div class="row mb-2">
                         <div class="input-group">
                             <div class="form-floating">
-                                <input type="text" class="form-control" id="metadata-key" value="@item.Key" placeholder="" readonly />
+                                <input type="text" class="form-control" id="metadata-key" value="@item.Key" placeholder="" readonly autocomplete="off" />
                                 <label for="metadata-key">Key</label>
                             </div>
                             <div class="form-floating">
-                                <input type="text" class="form-control" id="metadata-value" value="@item.Value" placeholder="" @onchange="(e) => Recipe.Metadata[item.Key] = e.Value?.ToString() ?? string.Empty" />
+                                <input type="text" class="form-control" id="metadata-value" value="@item.Value" placeholder="" @onchange="(e) => Recipe.Metadata[item.Key] = e.Value?.ToString() ?? string.Empty" autocomplete="off" />
                                 <label for="metadata-value">Value</label>
                             </div>
                             <button type="button" class="btn btn-danger" @onclick="() => RemoveMetadata(item.Key)">&times;</button>
@@ -251,11 +259,11 @@
                 }
                 <div class="input-group">
                     <div class="form-floating">
-                        <input type="text" class="form-control" id="new-metadata-key" @bind="@newMetadataKey" placeholder="" />
+                        <input type="text" class="form-control" id="new-metadata-key" @bind="@newMetadataKey" placeholder="" autocomplete="off" />
                         <label for="new-metadata-key">Key</label>
                     </div>
                     <div class="form-floating">
-                        <input type="text" class="form-control" id="new-metadata-value" @bind="newMetadataValue" placeholder="" />
+                        <input type="text" class="form-control" id="new-metadata-value" @bind="newMetadataValue" placeholder="" autocomplete="off" />
                         <label for="new-metadata-value">Value</label>
                     </div>
                     <button type="button" class="btn btn-success" @onclick="AddMetadata">+</button>
@@ -263,201 +271,4 @@
             </section>
         </div>
     </section>
-    <div class="row mb-2">
-        <div class="col">
-            <button type="button" class="btn btn-sm btn-info" @onclick="SaveRecipe">Save</button>
-        </div>
-    </div>
 </form>
-
-@code {
-    [Parameter]
-    public string? Id { get; set; } = null;
-
-    IList<string> KnownTags = [];
-
-    private RecipeEntity Recipe { get; set; } = new RecipeEntity { Id = Ulid.NewUlid().ToString() };
-
-    protected override async Task OnInitializedAsync()
-    {
-        await RefreshData();
-
-        if (Id != null)
-            Recipe = (await DbContext.Recipes.GetAsync(Id)) ?? new RecipeEntity { Id = Ulid.NewUlid().ToString() };
-    }
-
-    protected async Task RefreshData()
-    {
-        KnownTags = new List<string>(await DbContext.Recipes.GetTagsAsync());
-    }
-
-    private async Task NewRecipe()
-    {
-        Recipe = new RecipeEntity { Id = Ulid.NewUlid().ToString() };
-
-        await RefreshData();
-    }
-
-    private async Task LoadFile(InputFileChangeEventArgs e)
-    {
-        var serializedRecipe = await new StreamContent(e.File.OpenReadStream()).ReadAsStringAsync();
-        Recipe = RecipeSerializer.Deserialize<RecipeEntity>(serializedRecipe);
-
-        foreach (var tag in Recipe.Tags)
-        {
-            if (!KnownTags.Contains(tag))
-                KnownTags.Add(tag);
-        }
-
-        await Toaster.CreateToastAsync($"Recipe '{Recipe.Name}' loaded.");
-    }
-
-    private async Task SaveRecipe()
-    {
-        await DbContext.Recipes.SetAsync(Recipe);
-        await Toaster.CreateToastAsync($"Recipe '{Recipe.Name}' saved.");
-
-        await RefreshData();
-    }
-
-    #region Ingredients
-
-    private string newIngredient = string.Empty;
-
-    private void AddIngredient()
-    {
-        if (string.IsNullOrWhiteSpace(newIngredient))
-            return;
-
-        Recipe.Ingredients.Add(new Ingredient { Name = newIngredient.Trim() });
-        newIngredient = string.Empty;
-    }
-
-    private void RemoveIngredient(Ingredient ingredient)
-    {
-        Recipe.Ingredients.Remove(ingredient);
-    }
-
-    #endregion
-
-    #region IngredientNotes
-
-    private void AddNote(Ingredient ingredient)
-    {
-        ingredient.Notes.Add(string.Empty);
-    }
-
-    private void RemoveNote(Ingredient ingredient, int index)
-    {
-        ingredient.Notes.RemoveAt(index);
-    }
-
-    #endregion
-
-    #region Utilities
-
-    private string newUtility = string.Empty;
-
-    private void AddUtility()
-    {
-        if (string.IsNullOrWhiteSpace(newUtility))
-            return;
-
-        Recipe.Utilities.Add(newUtility.Trim());
-        newUtility = string.Empty;
-    }
-
-    private void RemoveUtility(int index)
-    {
-        Recipe.Utilities.RemoveAt(index);
-    }
-
-    #endregion
-
-    #region Instructions
-
-    private string newInstruction = string.Empty;
-
-    private void AddInstruction()
-    {
-        if (string.IsNullOrWhiteSpace(newInstruction.Trim()))
-            return;
-
-        Recipe.Instructions.Add(newInstruction.Trim());
-        newInstruction = string.Empty;
-    }
-
-    private void RemoveInstruction(int index)
-    {
-        Recipe.Instructions.RemoveAt(index);
-    }
-
-    #endregion
-
-    #region Tags
-
-    private string newTag = string.Empty;
-
-    private void AddTag()
-    {
-        if (string.IsNullOrWhiteSpace(newTag))
-            return;
-
-        KnownTags.Add(newTag);
-        Recipe.Tags.Add(newTag.Trim());
-        newTag = string.Empty;
-    }
-
-    private void UpdateTagSelection(string tag, bool isSelected)
-    {
-        if (isSelected)
-            Recipe.Tags.Add(tag);
-        else
-            Recipe.Tags.Remove(tag);
-    }
-
-    #endregion
-
-    #region Notes
-
-    private string newNote = string.Empty;
-
-    private void AddNote()
-    {
-        if (string.IsNullOrWhiteSpace(newNote))
-            return;
-
-        Recipe.Notes.Add(newNote.Trim());
-        newNote = string.Empty;
-    }
-
-    private void RemoveNote(int index)
-    {
-        Recipe.Notes.RemoveAt(index);
-    }
-
-    #endregion
-
-    #region Metadata
-
-    private string newMetadataKey = string.Empty;
-    private string newMetadataValue = string.Empty;
-
-    private void AddMetadata()
-    {
-        if (string.IsNullOrWhiteSpace(newMetadataKey) || Recipe.Metadata.ContainsKey(newMetadataKey))
-            return;
-
-        Recipe.Metadata.Add(newMetadataKey.Trim(), newMetadataValue.Trim());
-
-        newMetadataKey = string.Empty;
-        newMetadataValue = string.Empty;
-    }
-
-    private void RemoveMetadata(string key)
-    {
-        Recipe.Metadata.Remove(key);
-    }
-
-    #endregion
-}

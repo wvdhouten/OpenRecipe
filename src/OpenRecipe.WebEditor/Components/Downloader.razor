@@ -1,0 +1,33 @@
+﻿@inject IJSRuntime JS
+
+@code {
+    private Lazy<IJSObjectReference> _accessorJsRef = new();
+    private readonly IJSRuntime _jsRuntime;
+
+    public Downloader(IJSRuntime jsRuntime)
+    {
+        _jsRuntime = jsRuntime;
+    }
+
+    public async Task DownloadFile(string fileName, Stream stream)
+    {
+        using var reference = new DotNetStreamReference(stream: stream);
+
+        await WaitForReference();
+        await _accessorJsRef.Value.InvokeVoidAsync("downloadFile", fileName, reference);
+    }
+
+    private async Task WaitForReference()
+    {
+        if (!_accessorJsRef.IsValueCreated)
+            _accessorJsRef = new(await _jsRuntime.InvokeAsync<IJSObjectReference>("import", "/js/Downloader.js"));
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        GC.SuppressFinalize(this);
+
+        if (_accessorJsRef.IsValueCreated)
+            await _accessorJsRef.Value.DisposeAsync();
+    }
+}

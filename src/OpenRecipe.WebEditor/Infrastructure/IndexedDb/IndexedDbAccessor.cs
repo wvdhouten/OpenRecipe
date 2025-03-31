@@ -1,6 +1,6 @@
 ﻿using Microsoft.JSInterop;
 
-namespace OpenRecipe.WebEditor.Data;
+namespace OpenRecipe.WebEditor.Infrastructure.IndexedDb;
 
 public class IndexedDbAccessor : IAsyncDisposable
 {
@@ -12,10 +12,50 @@ public class IndexedDbAccessor : IAsyncDisposable
         _jsRuntime = jsRuntime;
     }
 
-    internal async Task InitializeAsync(IEnumerable<string> collections)
+    internal async Task InitializeAsync()
     {
+
+        var containers = await InitContainersAsync();
+
         await WaitForReference();
-        await _accessorJsRef.Value.InvokeVoidAsync("initialize", DateTime.Now.ToString("yyyyMMddhhmmss"), collections);
+        await _accessorJsRef.Value.InvokeVoidAsync("initialize", DateTime.Now.ToString("yyyyMMddhhmmss"), containers);
+    }
+
+    private async Task<IEnumerable<string>> InitContainersAsync()
+    {
+        var containers = new List<string>();
+        var properties = GetType().GetProperties();
+        foreach (var property in properties)
+        {
+            var propertyType = property.PropertyType;
+            if (TryInitContainer(propertyType, out var container))
+            {
+                var instance = Activator.CreateInstance(propertyType, this)
+                    ?? throw new InvalidOperationException($"Failed to create instance of {propertyType}");
+
+                property.SetValue(this, instance);
+
+                if (instance is EntityContainer entityContainer)
+                    await entityContainer.RefreshAsync();
+
+                containers.Add(container);
+            }
+        }
+        return containers;
+    }
+
+    private static bool TryInitContainer(Type? property, out string container)
+    {
+        container = string.Empty;
+
+        if (property == null)
+            return false;
+
+        if (!property.IsGenericType || property.GetGenericTypeDefinition() != typeof(EntityContainer<>))
+            return TryInitContainer(property.BaseType, out container);
+
+        container = property.GenericTypeArguments.First().Name;
+        return true;
     }
 
     internal async Task<IEnumerable<T>> GetAllAsync<T>(string collectionName)

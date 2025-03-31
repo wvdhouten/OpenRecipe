@@ -1,96 +1,132 @@
 ﻿@using System.Text.Json;
+@using System.Text.RegularExpressions
 @using Octokit
 @using OpenRecipe.Serialization
 @using OpenRecipe.WebEditor.Data;
+@using OpenRecipe.WebEditor.Infrastructure
 @using OpenRecipe.WebEditor.Models
-@using OpenRecipe.WebEditor.Models.Git
 @using OpenRecipe.WebEditor.Utils
-@using System.Text.RegularExpressions
-@inject StorageContext DbContext
+@using System.Collections.Immutable
+@inject SettingsRepository SettingsRepository
+@inject RecipeRepository RecipeRepository
+@inject GitClient GitClient
+@inject Downloader Downloader
 @inject Toaster Toaster
-@inject IJSRuntime JS
 @page "/settings"
 
-<script>
-    window.downloadFile = async (fileName, contentStreamReference) => {
-    const arrayBuffer = await contentStreamReference.arrayBuffer();
-    const blob = new Blob([arrayBuffer]);
-    const url = URL.createObjectURL(blob);
-    const anchorElement = document.createElement('a');
-    anchorElement.href = url;
-    anchorElement.download = fileName ?? '';
-    anchorElement.click();
-    anchorElement.remove();
-    URL.revokeObjectURL(url);
-    }
-</script>
+<PageTitle>Open Recipe Settings</PageTitle>
 
-<pre>@RecipeCount recipes!</pre>
+<InputFile id="file" OnChange="ImportArchiveAsync" hidden />
 
-<section>
-    <div class="row mb-2">
-        <div class="col-md-auto">
-            <button type="button" class="btn btn-sm btn-info" @onclick="ClearAsync">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash" viewBox="0 0 16 16">
-                    <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z" />
-                    <path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3h11V2h-11z" />
-                </svg>
-            </button>
-        </div>
-        <div class="col-md-auto">
-            <label for="file" class="btn btn-sm btn-info">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-upload" viewBox="0 0 16 16">
-                    <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5" />
-                    <path d="M7.646 1.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1-.708.708L8.5 2.707V11.5a.5.5 0 0 1-1 0V2.707L5.354 4.854a.5.5 0 1 1-.708-.708z" />
-                </svg>
-            </label>
-            <InputFile id="file" OnChange="ImportArchiveAsync" hidden />
-        </div>
-        <div class="col-md-auto">
-            <button type="button" class="btn btn-sm btn-info" @onclick="ExportArchiveAsync">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-download" viewBox="0 0 16 16">
-                    <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5" />
-                    <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708z" />
-                </svg>
-            </button>
-        </div>
-    </div>
-    <div class="row mb-2">
-        <div class="col-lg">
-            <div class="input-group">
-                <div class="form-floating">
-                    <input type="text" class="form-control" id="git-owner" @bind="GitOwner" placeholder="">
-                    <label for="git-owner">GitHub Owner</label>
-                </div>
-                <div class="form-floating">
-                    <input type="text" class="form-control" id="git-repository" @bind="GitRepository" placeholder="">
-                    <label for="git-repository">GitHub Repository</label>
-                </div>
-                <div class="form-floating">
-                    <input type="text" class="form-control" id="git-branch" @bind="GitBranch" placeholder="">
-                    <label for="git-branch">GitHub Branch</label>
-                </div>
-                <button type="button" class="btn btn-info" @onclick="ImportRepositoryAsync">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-cloud-arrow-down" viewBox="0 0 16 16">
-                        <path fill-rule="evenodd" d="M7.646 10.854a.5.5 0 0 0 .708 0l2-2a.5.5 0 0 0-.708-.708L8.5 9.293V5.5a.5.5 0 0 0-1 0v3.793L6.354 8.146a.5.5 0 1 0-.708.708z" />
-                        <path d="M4.406 3.342A5.53 5.53 0 0 1 8 2c2.69 0 4.923 2 5.166 4.579C14.758 6.804 16 8.137 16 9.773 16 11.569 14.502 13 12.687 13H3.781C1.708 13 0 11.366 0 9.318c0-1.763 1.266-3.223 2.942-3.593.143-.863.698-1.723 1.464-2.383m.653.757c-.757.653-1.153 1.44-1.153 2.056v.448l-.445.049C2.064 6.805 1 7.952 1 9.318 1 10.785 2.23 12 3.781 12h8.906C13.98 12 15 10.988 15 9.773c0-1.216-1.02-2.228-2.313-2.228h-.5v-.5C12.188 4.825 10.328 3 8 3a4.53 4.53 0 0 0-2.941 1.1z" />
-                    </svg>
-                </button>
-            </div>
-        </div>
-    </div>
-    <div class="row mb-2">
-        <div class="col-lg">
+<div class="hstack gap-2 mb-2">
+    <button type="button" class="btn btn-sm btn-secondary position-relative" title="Clear DB" @onclick="ClearAsync">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash" viewBox="0 0 16 16">
+            <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z" />
+            <path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3h11V2h-11z" />
+        </svg>
+        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+            @RecipeCount
+            <span class="visually-hidden">recipes</span>
+        </span>
+    </button>
+    <label for="file" class="btn btn-sm btn-secondary" title="Import Archive">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-upload" viewBox="0 0 16 16">
+            <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5" />
+            <path d="M7.646 1.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1-.708.708L8.5 2.707V11.5a.5.5 0 0 1-1 0V2.707L5.354 4.854a.5.5 0 1 1-.708-.708z" />
+        </svg>
+    </label>
+    <button type="button" class="btn btn-sm btn-secondary" title="Export Archive" @onclick="ExportArchiveAsync">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-download" viewBox="0 0 16 16">
+            <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5" />
+            <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708z" />
+        </svg>
+    </button>
+    <button type="button" class="btn btn-sm btn-info ms-auto" title="Save" @onclick="SaveSettings">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-floppy" viewBox="0 0 16 16">
+            <path d="M11 2H9v3h2z" />
+            <path d="M1.5 0h11.586a1.5 1.5 0 0 1 1.06.44l1.415 1.414A1.5 1.5 0 0 1 16 2.914V14.5a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 0 14.5v-13A1.5 1.5 0 0 1 1.5 0M1 1.5v13a.5.5 0 0 0 .5.5H2v-4.5A1.5 1.5 0 0 1 3.5 9h9a1.5 1.5 0 0 1 1.5 1.5V15h.5a.5.5 0 0 0 .5-.5V2.914a.5.5 0 0 0-.146-.353l-1.415-1.415A.5.5 0 0 0 13.086 1H13v4.5A1.5 1.5 0 0 1 11.5 7h-7A1.5 1.5 0 0 1 3 5.5V1H1.5a.5.5 0 0 0-.5.5m3 4a.5.5 0 0 0 .5.5h7a.5.5 0 0 0 .5-.5V1H4zM3 15h10v-4.5a.5.5 0 0 0-.5-.5h-9a.5.5 0 0 0-.5.5z" />
+        </svg>
+    </button>
+</div>
+<div class="row">
+    <span class="col-auto">Peristence</span>
+    <hr class="col col-filler" />
+</div>
+<div class="row mb-2">
+    <div class="col-lg">
+        <div class="input-group">
             <div class="form-floating">
-                <input type="password" class="form-control" id="git-pat" @bind="GitPat" placeholder="">
-                <label for="git-pat">GitHub PAT</label>
+                <input type="text" class="form-control" id="git-owner" @bind="GitOwner" placeholder="">
+                <label for="git-owner">GitHub Owner</label>
             </div>
+            <div class="form-floating">
+                <input type="text" class="form-control" id="git-repository" @bind="GitRepository" placeholder="">
+                <label for="git-repository">GitHub Repository</label>
+            </div>
+            <div class="form-floating">
+                <input type="text" class="form-control" id="git-branch" @bind="GitBranch" placeholder="">
+                <label for="git-branch">GitHub Branch</label>
+            </div>
+            <button type="button" class="btn btn-info" title="Import Repository" @onclick="ImportRepositoryAsync">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-cloud-download" viewBox="0 0 16 16">
+                    <path d="M4.406 1.342A5.53 5.53 0 0 1 8 0c2.69 0 4.923 2 5.166 4.579C14.758 4.804 16 6.137 16 7.773 16 9.569 14.502 11 12.687 11H10a.5.5 0 0 1 0-1h2.688C13.979 10 15 8.988 15 7.773c0-1.216-1.02-2.228-2.313-2.228h-.5v-.5C12.188 2.825 10.328 1 8 1a4.53 4.53 0 0 0-2.941 1.1c-.757.652-1.153 1.438-1.153 2.055v.448l-.445.049C2.064 4.805 1 5.952 1 7.318 1 8.785 2.23 10 3.781 10H6a.5.5 0 0 1 0 1H3.781C1.708 11 0 9.366 0 7.318c0-1.763 1.266-3.223 2.942-3.593.143-.863.698-1.723 1.464-2.383" />
+                    <path d="M7.646 15.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 14.293V5.5a.5.5 0 0 0-1 0v8.793l-2.146-2.147a.5.5 0 0 0-.708.708z" />
+                </svg>
+            </button>
         </div>
     </div>
-    <div class="row">
-        <div class="col">
-            <button type="button" class="btn btn-sm btn-info" @onclick="SaveSettings">Save</button>
+</div>
+<div class="row mb-2">
+    <div class="col-lg">
+        <div class="form-floating">
+            <input type="password" class="form-control" id="git-pat" @bind="GitAccessToken" placeholder="">
+            <label for="git-pat">GitHub PAT</label>
         </div>
+    </div>
+</div>
+<div class="row">
+    <span class="col-auto">Watched Repositories</span>
+    <hr class="col col-filler" />
+</div>
+<section class="tab-pane show" id="metadata-tab-pane" role="tabpanel" aria-labelledby="metadata-tab" tabindex="0">
+    @foreach (var item in WatchedRepositories)
+    {
+        <div class="input-group">
+            <div class="form-floating">
+                <input type="text" class="form-control" id="git-owner" @bind="item.Owner" placeholder="">
+                <label for="git-owner">GitHub Owner</label>
+            </div>
+            <div class="form-floating">
+                <input type="text" class="form-control" id="git-repository" @bind="item.Repository" placeholder="">
+                <label for="git-repository">GitHub Repository</label>
+            </div>
+            <div class="form-floating">
+                <input type="text" class="form-control" id="git-branch" @bind="item.Branch" placeholder="">
+                <label for="git-branch">GitHub Branch</label>
+            </div>
+            <button type="button" class="btn btn-danger" @onclick="() => RemoveWatchedRepository(item)">&times;</button>
+            <button type="button" class="btn btn-info" title="Import Repository" @onclick="ImportRepositoryAsync">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-cloud-download" viewBox="0 0 16 16">
+                    <path d="M4.406 1.342A5.53 5.53 0 0 1 8 0c2.69 0 4.923 2 5.166 4.579C14.758 4.804 16 6.137 16 7.773 16 9.569 14.502 11 12.687 11H10a.5.5 0 0 1 0-1h2.688C13.979 10 15 8.988 15 7.773c0-1.216-1.02-2.228-2.313-2.228h-.5v-.5C12.188 2.825 10.328 1 8 1a4.53 4.53 0 0 0-2.941 1.1c-.757.652-1.153 1.438-1.153 2.055v.448l-.445.049C2.064 4.805 1 5.952 1 7.318 1 8.785 2.23 10 3.781 10H6a.5.5 0 0 1 0 1H3.781C1.708 11 0 9.366 0 7.318c0-1.763 1.266-3.223 2.942-3.593.143-.863.698-1.723 1.464-2.383" />
+                    <path d="M7.646 15.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 14.293V5.5a.5.5 0 0 0-1 0v8.793l-2.146-2.147a.5.5 0 0 0-.708.708z" />
+                </svg>
+            </button>
+        </div>
+    }
+    <div class="input-group">
+        <div class="form-floating">
+            <input type="text" class="form-control" id="git-owner" @bind="NewWatchedRepository.Owner" placeholder="" autocomplete="off">
+            <label for="git-owner">GitHub Owner</label>
+        </div>
+        <div class="form-floating">
+            <input type="text" class="form-control" id="git-repository" @bind="NewWatchedRepository.Repository" placeholder="" autocomplete="off">
+            <label for="git-repository">GitHub Repository</label>
+        </div>
+        <div class="form-floating">
+            <input type="text" class="form-control" id="git-branch" @bind="NewWatchedRepository.Branch" placeholder="" autocomplete="off">
+            <label for="git-branch">GitHub Branch</label>
+        </div>
+        <button type="button" class="btn btn-success" @onclick="AddWatchedRepository">+</button>
     </div>
 </section>
 
@@ -100,60 +136,60 @@
     private string GitOwner = "wvdhouten";
     private string GitRepository = "recipes";
     private string GitBranch = "main";
-    private string GitPat = string.Empty;
+    private string GitAccessToken = string.Empty;
+
+    private List<RepositoryInfo> WatchedRepositories = [];
+    private RepositoryInfo NewWatchedRepository { get; set; } = new();
 
     protected override async Task OnInitializedAsync()
     {
-        var patSetting = await DbContext.Settings.GetAsync(nameof(GitPat));
-        GitPat = patSetting?.Value ?? string.Empty;
+        await SettingsRepository.RefreshAll();
+
+        GitAccessToken = SettingsRepository.GitAccessToken ?? string.Empty;
+        GitOwner = SettingsRepository.DefaultGitOwner ?? string.Empty;
+        GitRepository = SettingsRepository.DefaultGitRepository ?? string.Empty;
+        GitBranch = SettingsRepository.DefaultGitBranch ?? string.Empty;
+
+        WatchedRepositories = await SettingsRepository.GetSetting(nameof(WatchedRepositories), new List<RepositoryInfo>());
 
         await UpdateCountsAsync();
     }
 
     private async Task ClearAsync()
     {
-        await DbContext.Recipes.ClearAsync();
+        await RecipeRepository.ClearAsync();
         await UpdateCountsAsync();
     }
 
     private async Task UpdateCountsAsync()
     {
-        RecipeCount = (await DbContext.Recipes.GetAsync()).Count();
+        RecipeCount = (await RecipeRepository.GetAsync()).Count();
     }
 
     private async Task ImportRepositoryAsync()
     {
-        if (string.IsNullOrWhiteSpace(GitOwner)
-        || string.IsNullOrWhiteSpace(GitRepository)
-        || string.IsNullOrWhiteSpace(GitBranch))
-            return;
-
-        var request = new HttpRequestMessage(HttpMethod.Get, $"https://api.github.com/repos/{GitOwner}/{GitRepository}/git/trees/{GitBranch}?recursive=1");
-        using var client = new HttpClient();
-        var response = await client.SendAsync(request);
-        var tree = await response.Content.ReadFromJsonAsync<GitTree>();
-        foreach (var item in tree!.Tree)
-            await TryImportFileAsync(client, item);
+        var files = await GitClient.GetFilesAsync();
+        foreach (var file in files)
+        {
+            await TryImportFileAsync(file);
+        }
 
         await UpdateCountsAsync();
     }
 
-    private async Task TryImportFileAsync(HttpClient client, GitTreeItem item)
+    private async Task TryImportFileAsync(string path)
     {
-        if (!item.Path.EndsWith(".yuml"))
+        if (!path.EndsWith(".yuml"))
             return;
 
-        var request = new HttpRequestMessage(HttpMethod.Get, item.Url);
-        var response = await client.SendAsync(request);
-        var file = await response.Content.ReadFromJsonAsync<GitTreeFile>();
-
-        byte[] data = Convert.FromBase64String(file!.Content);
-        string content = System.Text.Encoding.UTF8.GetString(data);
+        var content = await GitClient.GetContentAsync(path);
+        if (content is null)
+            return;
 
         var recipe = RecipeSerializer.Deserialize<RecipeEntity>(content);
         recipe.Id ??= Ulid.NewUlid().ToString();
 
-        await DbContext.Recipes.SetAsync(recipe);
+        await RecipeRepository.SetAsync(recipe);
     }
 
     private async Task ImportArchiveAsync(InputFileChangeEventArgs e)
@@ -171,7 +207,7 @@
         {
             var recipe = RecipeSerializer.Deserialize<RecipeEntity>(content);
             recipe.Id ??= Ulid.NewUlid().ToString();
-            await DbContext.Recipes.SetAsync(recipe);
+            await RecipeRepository.SetAsync(recipe);
         }
 
         await UpdateCountsAsync();
@@ -179,20 +215,34 @@
 
     private async Task ExportArchiveAsync()
     {
-        var recipes = await DbContext.Recipes.GetAsync();
+        var recipes = await RecipeRepository.GetAsync();
 
         var contents = recipes.Select(recipe => (recipe.Id!, RecipeSerializer.Serialize(recipe)));
         using var stream = await ArchiveUtil.PackAsync(contents);
-        using var reference = new DotNetStreamReference(stream: stream);
 
-        await JS.InvokeVoidAsync("downloadFile", "open-recipe-archive.zip", reference);
+        await Downloader.DownloadFile("open-recipe-archive.zip", stream);
     }
 
-    private async Task SaveSettings()
+    private async void SaveSettings()
     {
-        await DbContext.Settings.SetAsync(new() { Id = nameof(GitOwner), Value = GitOwner });
-        await DbContext.Settings.SetAsync(new() { Id = nameof(GitRepository), Value = GitRepository });
-        await DbContext.Settings.SetAsync(new() { Id = nameof(GitBranch), Value = GitBranch });
-        await DbContext.Settings.SetAsync(new() { Id = nameof(GitPat), Value = GitPat });
+        SettingsRepository.DefaultGitOwner = GitOwner;
+        SettingsRepository.DefaultGitRepository = GitRepository;
+        SettingsRepository.DefaultGitBranch = GitBranch;
+        SettingsRepository.GitAccessToken = GitAccessToken;
+
+        await SettingsRepository.SetSetting(nameof(WatchedRepositories), JsonSerializer.Serialize(WatchedRepositories));
+
+        await SettingsRepository.SaveAll();
+    }
+
+    private void AddWatchedRepository()
+    {
+        WatchedRepositories.Add(NewWatchedRepository);
+        NewWatchedRepository = new();
+    }
+
+    private void RemoveWatchedRepository(RepositoryInfo watchedRepository)
+    {
+        WatchedRepositories.Remove(watchedRepository);
     }
 }

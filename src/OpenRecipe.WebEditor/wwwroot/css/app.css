@@ -134,3 +134,9 @@ code {
   .nav-tabs > li {
     float: none;
   }
+
+.col-filler {
+  margin-top: auto;
+  margin-bottom: auto;
+  margin-right: calc(var(--bs-gutter-x)* .5);
+}
