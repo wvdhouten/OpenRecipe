@@ -2,6 +2,7 @@
 using OpenRecipe.WebEditor.Components;
 using OpenRecipe.WebEditor.Data;
 using OpenRecipe.WebEditor.Models;
+using System.Threading.Tasks;
 
 namespace OpenRecipe.WebEditor.Pages;
 
@@ -28,12 +29,14 @@ public partial class Catalog
         RecipeCount = SearchResults.Count();
     }
 
-    private void UpdateTagSelection(string tag, bool isSelected)
+    private async Task UpdateTagSelection(string tag, bool isSelected)
     {
         if (isSelected)
             SelectedTags.Add(tag);
         else
             SelectedTags.Remove(tag);
+
+        await ApplyFilterAsync();
     }
 
     private async Task ApplyFilterAsync()
@@ -78,7 +81,7 @@ public partial class Catalog
         KnownTags = await RecipeRepository.GetTagsAsync();
         RecipeCount = allRecipes.Count();
 
-        await Toaster.CreateToastAsync($"Recipe '{entity.Name}' deleted.");
+        await Toaster.ShowAsync($"Recipe '{entity.Name}' deleted.");
 
         await ApplyFilterAsync();
     }

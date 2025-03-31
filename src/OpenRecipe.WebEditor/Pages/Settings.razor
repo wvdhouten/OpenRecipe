@@ -7,11 +7,6 @@
 @using OpenRecipe.WebEditor.Models
 @using OpenRecipe.WebEditor.Utils
 @using System.Collections.Immutable
-@inject SettingsRepository SettingsRepository
-@inject RecipeRepository RecipeRepository
-@inject GitClient GitClient
-@inject Downloader Downloader
-@inject Toaster Toaster
 @page "/settings"
 
 <PageTitle>Open Recipe Settings</PageTitle>
@@ -49,25 +44,25 @@
     </button>
 </div>
 <div class="row">
-    <span class="col-auto">Peristence</span>
+    <span class="col-auto">GitHub Repository</span>
     <hr class="col col-filler" />
 </div>
 <div class="row mb-2">
     <div class="col-lg">
         <div class="input-group">
             <div class="form-floating">
-                <input type="text" class="form-control" id="git-owner" @bind="GitOwner" placeholder="">
-                <label for="git-owner">GitHub Owner</label>
+                <input type="text" class="form-control" id="git-owner" @bind="GitClient.DefaultRepositoryInfo.Owner" placeholder="">
+                <label for="git-owner">Owner</label>
             </div>
             <div class="form-floating">
-                <input type="text" class="form-control" id="git-repository" @bind="GitRepository" placeholder="">
-                <label for="git-repository">GitHub Repository</label>
+                <input type="text" class="form-control" id="git-repository" @bind="GitClient.DefaultRepositoryInfo.Repository" placeholder="">
+                <label for="git-repository">Repository</label>
             </div>
             <div class="form-floating">
-                <input type="text" class="form-control" id="git-branch" @bind="GitBranch" placeholder="">
-                <label for="git-branch">GitHub Branch</label>
+                <input type="text" class="form-control" id="git-branch" @bind="GitClient.DefaultRepositoryInfo.Branch" placeholder="">
+                <label for="git-branch">Branch</label>
             </div>
-            <button type="button" class="btn btn-info" title="Import Repository" @onclick="ImportRepositoryAsync">
+            <button type="button" class="btn btn-info" title="Import Repository" @onclick="() => ImportRepositoryAsync(GitClient.DefaultRepositoryInfo)">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-cloud-download" viewBox="0 0 16 16">
                     <path d="M4.406 1.342A5.53 5.53 0 0 1 8 0c2.69 0 4.923 2 5.166 4.579C14.758 4.804 16 6.137 16 7.773 16 9.569 14.502 11 12.687 11H10a.5.5 0 0 1 0-1h2.688C13.979 10 15 8.988 15 7.773c0-1.216-1.02-2.228-2.313-2.228h-.5v-.5C12.188 2.825 10.328 1 8 1a4.53 4.53 0 0 0-2.941 1.1c-.757.652-1.153 1.438-1.153 2.055v.448l-.445.049C2.064 4.805 1 5.952 1 7.318 1 8.785 2.23 10 3.781 10H6a.5.5 0 0 1 0 1H3.781C1.708 11 0 9.366 0 7.318c0-1.763 1.266-3.223 2.942-3.593.143-.863.698-1.723 1.464-2.383" />
                     <path d="M7.646 15.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 14.293V5.5a.5.5 0 0 0-1 0v8.793l-2.146-2.147a.5.5 0 0 0-.708.708z" />
@@ -79,7 +74,7 @@
 <div class="row mb-2">
     <div class="col-lg">
         <div class="form-floating">
-            <input type="password" class="form-control" id="git-pat" @bind="GitAccessToken" placeholder="">
+            <input type="password" class="form-control" id="git-pat" @bind="GitClient.GitAccessToken" placeholder="">
             <label for="git-pat">GitHub PAT</label>
         </div>
     </div>
@@ -89,23 +84,23 @@
     <hr class="col col-filler" />
 </div>
 <section class="tab-pane show" id="metadata-tab-pane" role="tabpanel" aria-labelledby="metadata-tab" tabindex="0">
-    @foreach (var item in WatchedRepositories)
+    @foreach (var info in WatchedRepositories)
     {
         <div class="input-group">
             <div class="form-floating">
-                <input type="text" class="form-control" id="git-owner" @bind="item.Owner" placeholder="">
+                <input type="text" class="form-control" id="git-owner" @bind="info.Owner" placeholder="">
                 <label for="git-owner">GitHub Owner</label>
             </div>
             <div class="form-floating">
-                <input type="text" class="form-control" id="git-repository" @bind="item.Repository" placeholder="">
+                <input type="text" class="form-control" id="git-repository" @bind="info.Repository" placeholder="">
                 <label for="git-repository">GitHub Repository</label>
             </div>
             <div class="form-floating">
-                <input type="text" class="form-control" id="git-branch" @bind="item.Branch" placeholder="">
+                <input type="text" class="form-control" id="git-branch" @bind="info.Branch" placeholder="">
                 <label for="git-branch">GitHub Branch</label>
             </div>
-            <button type="button" class="btn btn-danger" @onclick="() => RemoveWatchedRepository(item)">&times;</button>
-            <button type="button" class="btn btn-info" title="Import Repository" @onclick="ImportRepositoryAsync">
+            <button type="button" class="btn btn-danger" @onclick="() => RemoveWatchedRepository(info)">&times;</button>
+            <button type="button" class="btn btn-info" title="Import Repository" @onclick="() => ImportRepositoryAsync(info)">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-cloud-download" viewBox="0 0 16 16">
                     <path d="M4.406 1.342A5.53 5.53 0 0 1 8 0c2.69 0 4.923 2 5.166 4.579C14.758 4.804 16 6.137 16 7.773 16 9.569 14.502 11 12.687 11H10a.5.5 0 0 1 0-1h2.688C13.979 10 15 8.988 15 7.773c0-1.216-1.02-2.228-2.313-2.228h-.5v-.5C12.188 2.825 10.328 1 8 1a4.53 4.53 0 0 0-2.941 1.1c-.757.652-1.153 1.438-1.153 2.055v.448l-.445.049C2.064 4.805 1 5.952 1 7.318 1 8.785 2.23 10 3.781 10H6a.5.5 0 0 1 0 1H3.781C1.708 11 0 9.366 0 7.318c0-1.763 1.266-3.223 2.942-3.593.143-.863.698-1.723 1.464-2.383" />
                     <path d="M7.646 15.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 14.293V5.5a.5.5 0 0 0-1 0v8.793l-2.146-2.147a.5.5 0 0 0-.708.708z" />
@@ -129,120 +124,3 @@
         <button type="button" class="btn btn-success" @onclick="AddWatchedRepository">+</button>
     </div>
 </section>
-
-@code {
-    int RecipeCount = 0;
-
-    private string GitOwner = "wvdhouten";
-    private string GitRepository = "recipes";
-    private string GitBranch = "main";
-    private string GitAccessToken = string.Empty;
-
-    private List<RepositoryInfo> WatchedRepositories = [];
-    private RepositoryInfo NewWatchedRepository { get; set; } = new();
-
-    protected override async Task OnInitializedAsync()
-    {
-        await SettingsRepository.RefreshAll();
-
-        GitAccessToken = SettingsRepository.GitAccessToken ?? string.Empty;
-        GitOwner = SettingsRepository.DefaultGitOwner ?? string.Empty;
-        GitRepository = SettingsRepository.DefaultGitRepository ?? string.Empty;
-        GitBranch = SettingsRepository.DefaultGitBranch ?? string.Empty;
-
-        WatchedRepositories = await SettingsRepository.GetSetting(nameof(WatchedRepositories), new List<RepositoryInfo>());
-
-        await UpdateCountsAsync();
-    }
-
-    private async Task ClearAsync()
-    {
-        await RecipeRepository.ClearAsync();
-        await UpdateCountsAsync();
-    }
-
-    private async Task UpdateCountsAsync()
-    {
-        RecipeCount = (await RecipeRepository.GetAsync()).Count();
-    }
-
-    private async Task ImportRepositoryAsync()
-    {
-        var files = await GitClient.GetFilesAsync();
-        foreach (var file in files)
-        {
-            await TryImportFileAsync(file);
-        }
-
-        await UpdateCountsAsync();
-    }
-
-    private async Task TryImportFileAsync(string path)
-    {
-        if (!path.EndsWith(".yuml"))
-            return;
-
-        var content = await GitClient.GetContentAsync(path);
-        if (content is null)
-            return;
-
-        var recipe = RecipeSerializer.Deserialize<RecipeEntity>(content);
-        recipe.Id ??= Ulid.NewUlid().ToString();
-
-        await RecipeRepository.SetAsync(recipe);
-    }
-
-    private async Task ImportArchiveAsync(InputFileChangeEventArgs e)
-    {
-        using var memoryStream = new MemoryStream();
-        using (var fileStream = new StreamContent(e.File.OpenReadStream(5 * 1024 * 1024)).ReadAsStream())
-        {
-            await fileStream.CopyToAsync(memoryStream);
-            memoryStream.Position = 0;
-        }
-
-        var contents = await ArchiveUtil.UnpackAsync(memoryStream);
-
-        foreach (var (id, content) in contents)
-        {
-            var recipe = RecipeSerializer.Deserialize<RecipeEntity>(content);
-            recipe.Id ??= Ulid.NewUlid().ToString();
-            await RecipeRepository.SetAsync(recipe);
-        }
-
-        await UpdateCountsAsync();
-    }
-
-    private async Task ExportArchiveAsync()
-    {
-        var recipes = await RecipeRepository.GetAsync();
-
-        var contents = recipes.Select(recipe => (recipe.Id!, RecipeSerializer.Serialize(recipe)));
-        using var stream = await ArchiveUtil.PackAsync(contents);
-
-        await Downloader.DownloadFile("open-recipe-archive.zip", stream);
-    }
-
-    private async void SaveSettings()
-    {
-        SettingsRepository.DefaultGitOwner = GitOwner;
-        SettingsRepository.DefaultGitRepository = GitRepository;
-        SettingsRepository.DefaultGitBranch = GitBranch;
-        SettingsRepository.GitAccessToken = GitAccessToken;
-
-        await SettingsRepository.SetSetting(nameof(WatchedRepositories), JsonSerializer.Serialize(WatchedRepositories));
-
-        await SettingsRepository.SaveAll();
-    }
-
-    private void AddWatchedRepository()
-    {
-        WatchedRepositories.Add(NewWatchedRepository);
-        NewWatchedRepository = new();
-    }
-
-    private void RemoveWatchedRepository(RepositoryInfo watchedRepository)
-    {
-        WatchedRepositories.Remove(watchedRepository);
-    }
-}

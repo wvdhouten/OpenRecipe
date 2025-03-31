@@ -14,16 +14,18 @@ public class IndexedDbAccessor : IAsyncDisposable
 
     internal async Task InitializeAsync()
     {
-
-        var containers = await InitContainersAsync();
+        var containers = InitContainersAsync();
 
         await WaitForReference();
-        await _accessorJsRef.Value.InvokeVoidAsync("initialize", DateTime.Now.ToString("yyyyMMddhhmmss"), containers);
+        await _accessorJsRef.Value.InvokeVoidAsync("initialize", DateTime.Now.ToString("yyyyMMddhhmmss"), containers.Keys);
+
+        foreach (var container in containers.Values)
+            await container.RefreshAsync();
     }
 
-    private async Task<IEnumerable<string>> InitContainersAsync()
+    private Dictionary<string, EntityContainer> InitContainersAsync()
     {
-        var containers = new List<string>();
+        var containers = new Dictionary<string, EntityContainer>();
         var properties = GetType().GetProperties();
         foreach (var property in properties)
         {
@@ -36,9 +38,8 @@ public class IndexedDbAccessor : IAsyncDisposable
                 property.SetValue(this, instance);
 
                 if (instance is EntityContainer entityContainer)
-                    await entityContainer.RefreshAsync();
 
-                containers.Add(container);
+                containers.Add(container, entityContainer);
             }
         }
         return containers;

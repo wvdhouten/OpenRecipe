@@ -1,6 +1,6 @@
 ﻿using Alkaline64.Injectable;
 using Octokit;
-using OpenRecipe.WebEditor.Data;
+using OpenRecipe.WebEditor.Models;
 
 namespace OpenRecipe.WebEditor.Infrastructure;
 
@@ -9,14 +9,10 @@ public class GitClient
 {
     private const string ProductName = "OpenRecipe";
 
-    private readonly SettingsRepository _settingsRepository;
+    public string GitAccessToken { get; set; } = string.Empty;
+    public RepositoryInfo DefaultRepositoryInfo { get; set; } = new();
 
     private GitHubClient? currentClient = null;
-
-    public GitClient(SettingsRepository settingsRepository)
-    {
-        _settingsRepository = settingsRepository;
-    }
 
     public async Task<IEnumerable<string>> GetFilesAsync(string? owner = null, string? repository = null, string? branch = null)
     {
@@ -39,31 +35,28 @@ public class GitClient
         var files = await GetContents(string.Empty, owner, repository, branch);
         var existing = files.FirstOrDefault(file => file.Path == path);
 
-        var client = await GetClient();
+        var client = GetClient();
         if (existing is not null)
             await client.Repository.Content.UpdateFile(
-                owner ?? _settingsRepository.DefaultGitOwner,
-                repository ?? _settingsRepository.DefaultGitRepository,
+                owner ?? DefaultRepositoryInfo.Owner,
+                repository ?? DefaultRepositoryInfo.Repository,
                 path,
-                new UpdateFileRequest($"Update {path}", content, existing.Sha, branch ?? _settingsRepository.DefaultGitBranch));
+                new UpdateFileRequest($"Update {path}", content, existing.Sha, branch ?? DefaultRepositoryInfo.Branch));
         else
             await client.Repository.Content.CreateFile(
-                owner ?? _settingsRepository.DefaultGitOwner,
-                repository ?? _settingsRepository.DefaultGitRepository,
+                owner ?? DefaultRepositoryInfo.Owner,
+                repository ?? DefaultRepositoryInfo.Repository,
                 path,
-                new CreateFileRequest($"Update {path}", content, branch ?? _settingsRepository.DefaultGitBranch));
+                new CreateFileRequest($"Update {path}", content, branch ?? DefaultRepositoryInfo.Branch));
     }
 
-    private async Task<GitHubClient> GetClient()
+    private GitHubClient GetClient()
     {
-        if (currentClient is null || currentClient.Credentials.Password != _settingsRepository.GitAccessToken)
+        if (currentClient is null || currentClient.Credentials.Password != GitAccessToken)
         {
-            if (string.IsNullOrEmpty(_settingsRepository.GitAccessToken))
-                await _settingsRepository.RefreshAll();
-
             currentClient = new GitHubClient(new ProductHeaderValue(ProductName))
             {
-                Credentials = new Credentials(_settingsRepository.GitAccessToken)
+                Credentials = new Credentials(GitAccessToken)
             };
         }
         return currentClient;
@@ -71,18 +64,18 @@ public class GitClient
 
     private async Task<IReadOnlyList<RepositoryContent>> GetContents(string path, string? owner, string? repository, string? branch)
     {
-        var client = await GetClient();
+        var client = GetClient();
 
         if (string.IsNullOrEmpty(path))
             return await client.Repository.Content.GetAllContentsByRef(
-                owner ?? _settingsRepository.DefaultGitOwner,
-                repository ?? _settingsRepository.DefaultGitRepository,
-                branch ?? _settingsRepository.DefaultGitBranch);
+                owner ?? DefaultRepositoryInfo.Owner,
+                repository ?? DefaultRepositoryInfo.Repository,
+                branch ?? DefaultRepositoryInfo.Branch);
 
         return await client.Repository.Content.GetAllContentsByRef(
-            owner ?? _settingsRepository.DefaultGitOwner,
-            repository ?? _settingsRepository.DefaultGitRepository,
+            owner ?? DefaultRepositoryInfo.Owner,
+            repository ?? DefaultRepositoryInfo.Repository,
             path,
-            branch ?? _settingsRepository.DefaultGitBranch);
+            branch ?? DefaultRepositoryInfo.Branch);
     }
 }

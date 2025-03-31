@@ -38,6 +38,6 @@ public partial class Viewer
     private async Task LoadFile(InputFileChangeEventArgs e)
     {
         Recipe = RecipeSerializer.Deserialize(await new StreamContent(e.File.OpenReadStream()).ReadAsStringAsync());
-        await Toaster.CreateToastAsync($"Recipe '{Recipe.Name}' loaded.");
+        await Toaster.ShowAsync($"Recipe '{Recipe.Name}' loaded.");
     }
 }

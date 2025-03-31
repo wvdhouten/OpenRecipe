@@ -1,6 +1,5 @@
 ﻿@using System.Text.Json;
 @using OpenRecipe.WebEditor.Data;
-@using OpenRecipe.WebEditor.Extensions
 @using OpenRecipe.WebEditor.Infrastructure
 @using OpenRecipe.WebEditor.Models
 @page "/"
@@ -20,13 +19,13 @@
         <div class="row mb-2">
             <div class="col-md">
                 <div class="form-floating">
-                    <input type="text" class="form-control" id="name" @bind="NameFilter" placeholder="" autocomplete="off">
+                    <input type="text" class="form-control" id="name" @bind="NameFilter" @bind:after="ApplyFilterAsync" placeholder="" autocomplete="off">
                     <label for="name">Name/Description Filter</label>
                 </div>
             </div>
             <div class="col-md">
                 <div class="form-floating">
-                    <input type="text" class="form-control" id="name" @bind="IngredientFilter" placeholder="" autocomplete="off">
+                    <input type="text" class="form-control" id="name" @bind="IngredientFilter" @bind:after="ApplyFilterAsync" placeholder="" autocomplete="off">
                     <label for="name">Ingredient Filter</label>
                 </div>
             </div>
@@ -40,11 +39,6 @@
                         <label class="btn btn-sm btn-outline-warning" for="@tag">@tag</label>
                     </div>
                 }
-            </div>
-        </div>
-        <div class="row mb-2">
-            <div class="col">
-                <button type="button" class="btn btn-sm btn-info" @onclick="ApplyFilterAsync">Filter</button>
             </div>
         </div>
     </form>

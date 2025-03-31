@@ -19,7 +19,7 @@
         _jsRuntime = jsRuntime;
     }
 
-    public async Task CreateToastAsync(string message)
+    public async Task ShowAsync(string message)
     {
         await WaitForReference();
         await _accessorJsRef.Value.InvokeVoidAsync("createToast", message);
