@@ -13,5 +13,5 @@ export interface Recipe {
     nutrition?: { [key: string]: number };
     notes: string[];
     tags: string[];
-    metadata?: { [key: string]: number };
+    metadata?: { [key: string]: string };
 }

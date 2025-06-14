@@ -11,6 +11,20 @@ interface RecipeDb extends DBSchema {
             content: Recipe;
         };
     };
+    tags: {
+        key: string;
+        value: {
+            id: string;
+            content: string;
+        };
+    };
+    assets: {
+        key: string;
+        value: {
+            id: string;
+            content: string;
+        };
+    };
 }
 
 class GitHubService {
@@ -19,14 +33,22 @@ class GitHubService {
 
     constructor() {
         this.octokit = new Octokit();
-        this.dbPromise = openDB<RecipeDb>('recipes', 1, {
+        this.dbPromise = openDB<RecipeDb>('recipes', 1.1, {
             upgrade(db) {
-                db.createObjectStore('recipes', { keyPath: 'id' });
+                if (!db.objectStoreNames.contains('recipes')) {
+                    db.createObjectStore('recipes', { keyPath: 'id', autoIncrement: true });
+                }
+                if (!db.objectStoreNames.contains('tags')) {
+                    db.createObjectStore('tags', { keyPath: 'id' });
+                }
+                if (!db.objectStoreNames.contains('assets')) {
+                    db.createObjectStore('assets', { keyPath: 'id' });
+                }
             },
         });
     }
 
-    public async downloadAndStoreFiles(owner: string, repo: string): Promise<Recipe[]> {
+    public async downloadAndStoreRecipes(owner: string, repo: string): Promise<Recipe[]> {
         const files = await this.getAllFiles(owner, repo);
         const db = await this.dbPromise;
 
@@ -58,7 +80,17 @@ class GitHubService {
         return recipes;
     }
 
-    private async getAllFiles(owner: string, repo: string, path = ''): Promise<{ path: string }[]> {
+    public async downloadAndStoreAssets(owner: string, repo: string): Promise<void> {
+        const files = await this.getAllFiles(owner, repo, 'assets');
+        const db = await this.dbPromise;
+
+        for (const file of files) {
+            const content = await this.getFileContent(owner, repo, file.path);
+            await db.put('assets', { id: file.path, content: content });
+        }
+    }
+
+    private async getAllFiles(owner: string, repo: string, path = '', recursive = false): Promise<{ path: string }[]> {
         const response = await this.octokit.repos.getContent({ owner, repo, path });
         const files: { path: string }[] = [];
 
@@ -66,7 +98,7 @@ class GitHubService {
             for (const item of response.data) {
                 if (item.type === 'file') {
                     files.push({ path: item.path });
-                } else if (item.type === 'dir') {
+                } else if (item.type === 'dir' && recursive) {
                     const subFiles = await this.getAllFiles(owner, repo, item.path);
                     files.push(...subFiles);
                 }

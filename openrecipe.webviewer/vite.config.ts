@@ -6,5 +6,6 @@ export default defineConfig({
     plugins: [plugin()],
     server: {
         port: 49967,
-    }
+    },
+    publicDir: 'public', // Explicitly define the public directory
 })

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Recipe } from '../types/recipe';
 import RecipeService from '../services/recipe-service';
 
@@ -10,6 +10,7 @@ const RecipeCatalog: React.FC = () => {
   const [filterText, setFilterText] = useState<string>('');
   const [tags, setTags] = useState<string[]>([]);
   const [selectedTags, setSelectedTags] = useState<Set<string>>(new Set());
+  const navigate = useNavigate();
 
   useEffect(() => {
     refreshRecipes(false);
@@ -19,7 +20,7 @@ const RecipeCatalog: React.FC = () => {
     if (hard) await recipeService.refresh();
 
     let recipes = await recipeService.getAllRecipes();
-    if (!recipes) {
+    if (!recipes.length) {
       await recipeService.refresh();
       recipes = await recipeService.getAllRecipes();
     }
@@ -41,10 +42,11 @@ const RecipeCatalog: React.FC = () => {
   };
 
   const filteredRecipes = recipes.filter(recipe => {
-    const matchesText = recipe.name.toLowerCase().includes(filterText.toLowerCase());
+    const matchesText = !filterText || recipe.name.toLowerCase().includes(filterText.toLowerCase());
+    const matchesIngredient = !filterText || recipe.ingredients.some(ingredient => ingredient.name.toLowerCase().includes(filterText.toLowerCase()));
     const matchesTags =
       selectedTags.size === 0 || Array.from(selectedTags).every(tag => recipe.tags.includes(tag));
-    return matchesText && matchesTags;
+    return matchesText && matchesIngredient && matchesTags;
   });
 
   return (
@@ -65,7 +67,7 @@ const RecipeCatalog: React.FC = () => {
           <input
             type="text"
             className="form-control"
-            placeholder="Filter by name..."
+            placeholder="Filter by name or ingredient..."
             value={filterText}
             onChange={e => setFilterText(e.target.value)}
           />
@@ -87,15 +89,37 @@ const RecipeCatalog: React.FC = () => {
       </div>
 
       {filteredRecipes.length > 0 ? (
-        <ul className="list-group">
+        <div className="row">
           {filteredRecipes.map(recipe => (
-            <li key={recipe.id} className="list-group-item d-flex justify-content-between align-items-center">
-              <Link to={`/recipe/${recipe.id}`} className="text-decoration-none">
-                {recipe.name}
-              </Link>
-            </li>
+            <div
+              key={recipe.id}
+              className="col-md-4 mb-4"
+              onClick={() => navigate(`/recipe/${recipe.id}`)}
+              style={{ cursor: 'pointer' }}
+            >
+              <div className="card h-100">
+                <div className="position-relative">
+                  <img
+                              src='/assets/recipe.jpeg'
+                              className="card-img-top"
+                              alt={recipe.name}
+                              style={{ objectFit: 'cover', height: '200px' }}
+                              
+                  />
+                  <div
+                    className="position-absolute bottom-0 start-0 w-100 text-white p-2"
+                    style={{
+                      background: 'rgba(0, 0, 0, 0.6)',
+                      textAlign: 'center',
+                    }}
+                  >
+                    <h5 className="m-0">{recipe.name}</h5>
+                  </div>
+                </div>
+              </div>
+            </div>
           ))}
-        </ul>
+        </div>
       ) : (
         <p className="text-center text-muted">No recipes found. Try adjusting your filter.</p>
       )}
