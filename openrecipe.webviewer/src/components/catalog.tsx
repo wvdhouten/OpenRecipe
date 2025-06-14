@@ -63,7 +63,7 @@ const RecipeCatalog: React.FC = () => {
       </header>
 
       <div className="mb-4 d-flex justify-content-between align-items-center">
-        <div className="input-group w-50">
+        <div className="input-group">
           <input
             type="text"
             className="form-control"
@@ -79,7 +79,7 @@ const RecipeCatalog: React.FC = () => {
           {tags.map(tag => (
             <button
               key={tag}
-              className={`btn btn-sm me-2 mb-2 ${selectedTags.has(tag) ? 'btn-warning' : 'btn-outline-warning'}`}
+              className={`btn btn-sm me-2 mb-2 ${selectedTags.has(tag) ? 'btn-warning' : 'btn-outline-secondary'}`}
               onClick={() => toggleTag(tag)}
             >
               {tag}
