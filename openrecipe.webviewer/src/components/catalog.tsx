@@ -79,7 +79,7 @@ const RecipeCatalog: React.FC = () => {
           {tags.map(tag => (
             <button
               key={tag}
-              className={`btn btn-sm me-2 mb-2 ${selectedTags.has(tag) ? 'btn-warning' : 'btn-outline-secondary'}`}
+              className={`btn btn-sm me-2 mb-2 ${selectedTags.has(tag) ? 'btn-warning active' : 'btn-outline-warning'}`}
               onClick={() => toggleTag(tag)}
             >
               {tag}
