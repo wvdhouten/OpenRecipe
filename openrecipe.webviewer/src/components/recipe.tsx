@@ -12,9 +12,23 @@ const RecipeDetails: React.FC = () => {
     const recipeService = new RecipeService();
 
     useEffect(() => {
-        recipeService.getRecipe(id ?? "")
-            .then(data => { setRecipe(data); setDesiredServings(data?.servings ?? 1); });
+        loadRecipe(id ?? "", true);
     }, [id]);
+
+
+    function loadRecipe(id: string, retry: boolean) {
+        recipeService.getRecipe(id ?? "").then(data =>
+        {
+            if (!data) {
+                if (retry)
+                    recipeService.refresh().then(() => { loadRecipe(id, false); })
+                else
+                    navigate('/recipes');
+            }
+
+            setRecipe(data); setDesiredServings(data?.servings ?? 1);
+        });
+    }
 
     function scaleIngredient(ingredient: Ingredient): number {
         const scaledQuantity = ingredient.quantity * (desiredServings / (recipe?.servings ?? 1));
@@ -30,11 +44,7 @@ const RecipeDetails: React.FC = () => {
             <header className="bg-dark text-light rounded">
                 <div className="d-flex justify-content-between align-items-center">
                     <h1 className="display-5">{recipe.name}</h1>
-                    <button
-                        className="btn btn-outline-secondary"
-                        onClick={() => navigate('/recipes')}
-                        title="Refresh Recipes"
-                    >
+                    <button className="btn btn-outline-secondary" onClick={() => navigate('/recipes')} title="Refresh Recipes">
                         <i className="bi bi-arrow-left"></i>
                     </button>
                 </div>

@@ -52,6 +52,9 @@ class RecipeService {
         await db.delete('recipes', id);
     }
 
+    async ensureRecipes(): Promise<void> {
+    }
+
     async refresh(): Promise<void> {
         const githubService = new GithubService();
         const recipes = await githubService.downloadAndStoreRecipes("wvdhouten", "recipes");

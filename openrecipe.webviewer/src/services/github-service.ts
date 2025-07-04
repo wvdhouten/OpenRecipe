@@ -94,14 +94,16 @@ class GitHubService {
         const response = await this.octokit.repos.getContent({ owner, repo, path });
         const files: { path: string }[] = [];
 
-        if (Array.isArray(response.data)) {
-            for (const item of response.data) {
-                if (item.type === 'file') {
-                    files.push({ path: item.path });
-                } else if (item.type === 'dir' && recursive) {
-                    const subFiles = await this.getAllFiles(owner, repo, item.path);
-                    files.push(...subFiles);
-                }
+        if (!Array.isArray(response.data)) {
+            return files;
+        }
+
+        for (const item of response.data) {
+            if (item.type === 'file') {
+                files.push({ path: item.path });
+            } else if (item.type === 'dir' && recursive) {
+                const subFiles = await this.getAllFiles(owner, repo, item.path);
+                files.push(...subFiles);
             }
         }
 
