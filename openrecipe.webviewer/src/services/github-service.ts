@@ -32,7 +32,9 @@ class GitHubService {
     private dbPromise: Promise<IDBPDatabase<RecipeDb>>;
 
     constructor() {
-        this.octokit = new Octokit();
+        let token = localStorage.getItem('githubToken');
+        const octoParams = token !== null && token !== "" ? { auth: token } : {};
+        this.octokit = new Octokit(octoParams);
         this.dbPromise = openDB<RecipeDb>('recipes', 1.1, {
             upgrade(db) {
                 if (!db.objectStoreNames.contains('recipes')) {
@@ -74,7 +76,7 @@ class GitHubService {
                 })
             };
             recipes.push(recipe);
-            await db.put('recipes', { id: file.path, content: recipe});
+            await db.put('recipes', { id: file.path, content: recipe });
         }
 
         return recipes;
@@ -116,6 +118,24 @@ class GitHubService {
             return atob(response.data.content);
         }
         throw new Error('File content not found');
+    }
+
+    private async writeFileContent(owner: string, repo: string, path: string, content: string, message: string = 'Update file'): Promise<void> {
+        // Get the current file SHA if it exists (required for updates)
+        let sha: string | undefined = undefined;
+        try {
+            const response = await this.octokit.repos.getContent({ owner, repo, path });
+            if ('sha' in response.data) {
+                sha = response.data.sha;
+            }
+        } catch (error: any) {
+            // If file does not exist, ignore error (will create new file)
+            if (error.status !== 404) {
+                throw error;
+            }
+        }
+
+        await this.octokit.repos.createOrUpdateFileContents({ owner, repo, path, message, content: btoa(content), sha });
     }
 }
 
