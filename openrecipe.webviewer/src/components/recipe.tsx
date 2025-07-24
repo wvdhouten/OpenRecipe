@@ -23,7 +23,7 @@ const RecipeDetails: React.FC = () => {
                 if (retry)
                     recipeService.refresh().then(() => { loadRecipe(id, false); })
                 else
-                    navigate('/recipes');
+                    navigate('/');
             }
 
             setRecipe(data); setDesiredServings(data?.servings ?? 1);
@@ -44,9 +44,14 @@ const RecipeDetails: React.FC = () => {
             <header className="bg-dark text-light rounded">
                 <div className="d-flex justify-content-between align-items-center">
                     <h1 className="display-5">{recipe.name}</h1>
-                    <button className="btn btn-outline-secondary" onClick={() => navigate('/recipes')} title="Refresh Recipes">
+                    <div>
+                      <button className="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#settings-modal">
+                        <i className="bi bi-sliders"></i>
+                      </button>
+                      <button className="btn btn-outline-secondary" onClick={() => navigate('/')} title="Back to Catalog">
                         <i className="bi bi-arrow-left"></i>
-                    </button>
+                      </button>
+                    </div>
                 </div>
                 <p className="lead">{recipe.description}</p>
                 <div className="mb-3">
@@ -86,7 +91,7 @@ const RecipeDetails: React.FC = () => {
                     <li className="nav-item" role="presentation">
                         <button className="nav-link" id="instructions-tab" data-bs-toggle="tab" data-bs-target="#instructions-tab-pane" type="button" role="tab" aria-controls="instructions-tab-pane" aria-selected="false">Instructions</button>
                     </li>
-                    <li className="nav-item" role="presentation" hidden={recipe.notes?.length < 1}>
+                    <li className="nav-item" role="presentation" hidden={!recipe.notes || recipe.notes.length < 1}>
                         <button className="nav-link" id="notes-tab" data-bs-toggle="tab" data-bs-target="#notes-tab-pane" type="button" role="tab" aria-controls="notes-tab-pane" aria-selected="false">Notes</button>
                     </li>
                 </ul>

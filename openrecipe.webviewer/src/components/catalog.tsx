@@ -44,8 +44,7 @@ const RecipeCatalog: React.FC = () => {
   const filteredRecipes = recipes.filter(recipe => {
     const matchesText = !filterText || recipe.name.toLowerCase().includes(filterText.toLowerCase());
     const matchesIngredient = !filterText || recipe.ingredients.some(ingredient => ingredient.name.toLowerCase().includes(filterText.toLowerCase()));
-    const matchesTags =
-      selectedTags.size === 0 || Array.from(selectedTags).every(tag => recipe.tags.includes(tag));
+    const matchesTags = selectedTags.size === 0 || Array.from(selectedTags).every(tag => recipe.tags.includes(tag));
     return matchesText && matchesIngredient && matchesTags;
   });
 
@@ -53,35 +52,26 @@ const RecipeCatalog: React.FC = () => {
     <div className="container mt-4">
       <header className="d-flex justify-content-between align-items-center">
         <h1 className="display-5 text-center">Recipes</h1>
-        <button
-          className="btn btn-outline-secondary"
-          onClick={() => refreshRecipes(true)}
-          title="Refresh Recipes"
-        >
-          <i className="bi bi-arrow-counterclockwise"></i>
-        </button>
+        <div>
+          <button className="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#settings-modal">
+            <i className="bi bi-sliders"></i>
+          </button>
+          <button className="btn btn-outline-secondary" onClick={() => refreshRecipes(true)} title="Refresh Recipes">
+            <i className="bi bi-arrow-counterclockwise"></i>
+          </button>
+        </div>
       </header>
 
       <div className="mb-4 d-flex justify-content-between align-items-center">
         <div className="input-group">
-          <input
-            type="text"
-            className="form-control"
-            placeholder="Filter by name or ingredient..."
-            value={filterText}
-            onChange={e => setFilterText(e.target.value)}
-          />
+          <input type="text" className="form-control" placeholder="Filter by name or ingredient..." value={filterText} onChange={e => setFilterText(e.target.value)} />
         </div>
       </div>
 
       <div className="mb-4">
         <div className="d-flex flex-wrap">
           {tags.map(tag => (
-            <button
-              key={tag}
-              className={`btn btn-sm me-2 mb-2 ${selectedTags.has(tag) ? 'btn-warning active' : 'btn-outline-warning'}`}
-              onClick={() => toggleTag(tag)}
-            >
+            <button key={tag} className={`btn btn-sm me-2 mb-2 ${selectedTags.has(tag) ? 'btn-warning active' : 'btn-outline-warning'}`} onClick={() => toggleTag(tag)}>
               {tag}
             </button>
           ))}
@@ -91,28 +81,11 @@ const RecipeCatalog: React.FC = () => {
       {filteredRecipes.length > 0 ? (
         <div className="row">
           {filteredRecipes.map(recipe => (
-            <div
-              key={recipe.id}
-              className="col-md-4 mb-4"
-              onClick={() => navigate(`/recipe/${recipe.id}`)}
-              style={{ cursor: 'pointer' }}
-            >
+            <div id={recipe.id} key={recipe.id} className="col-md-4 mb-4" onClick={() => navigate(`/recipe/${recipe.id}`)} style={{ cursor: 'pointer' }}>
               <div className="card h-100">
                 <div className="position-relative">
-                  <img
-                              src='/assets/recipe.jpeg'
-                              className="card-img-top"
-                              alt={recipe.name}
-                              style={{ objectFit: 'cover', height: '200px' }}
-                              
-                  />
-                  <div
-                    className="position-absolute bottom-0 start-0 w-100 text-white p-2"
-                    style={{
-                      background: 'rgba(0, 0, 0, 0.6)',
-                      textAlign: 'center',
-                    }}
-                  >
+                  <img src='/assets/recipe.jpeg' className="card-img-top" alt={recipe.name} style={{ objectFit: 'cover', height: '200px' }} />
+                  <div className="position-absolute bottom-0 start-0 w-100 text-white p-2" style={{ background: 'rgba(0, 0, 0, 0.6)', textAlign: 'center' }}>
                     <h5 className="m-0">{recipe.name}</h5>
                   </div>
                 </div>

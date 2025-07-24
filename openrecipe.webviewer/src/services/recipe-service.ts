@@ -5,6 +5,7 @@ import GithubService from './github-service';
 class RecipeService {
     private dbPromise: Promise<IDBPDatabase>;
     private tagsStoreName = 'tags'; // Store name for tags
+    private githubService = new GithubService();
 
     constructor() {
         this.dbPromise = openDB('recipes', 1.1, {
@@ -24,7 +25,7 @@ class RecipeService {
 
     async addRecipe(recipe: Omit<Recipe, 'id'>): Promise<string> {
         const db = await this.dbPromise;
-        return db.add('recipes', recipe).then((id) => id.toString());
+        return db.add('recipes', recipe).then(id => id.toString());
     }
 
     async getRecipe(id: string): Promise<Recipe | null> {
@@ -45,6 +46,8 @@ class RecipeService {
     async updateRecipe(recipe: Recipe): Promise<void> {
         const db = await this.dbPromise;
         await db.put('recipes', recipe);
+
+        await this.githubService.uploadRecipe("wvdhouten", "recipes", recipe); // Upload updated recipe to GitHub
     }
 
     async deleteRecipe(id: string): Promise<void> {
@@ -56,9 +59,8 @@ class RecipeService {
     }
 
     async refresh(): Promise<void> {
-        const githubService = new GithubService();
-        const recipes = await githubService.downloadAndStoreRecipes("wvdhouten", "recipes");
-        githubService.downloadAndStoreAssets("wvdhouten", "recipes");
+        const recipes = await this.githubService.downloadAndStoreRecipes("wvdhouten", "recipes");
+        this.githubService.downloadAndStoreAssets("wvdhouten", "recipes");
         const db = await this.dbPromise;
 
         await db.clear('recipes');

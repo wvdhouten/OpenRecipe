@@ -37,15 +37,12 @@ class GitHubService {
         this.octokit = new Octokit(octoParams);
         this.dbPromise = openDB<RecipeDb>('recipes', 1.1, {
             upgrade(db) {
-                if (!db.objectStoreNames.contains('recipes')) {
+                if (!db.objectStoreNames.contains('recipes'))
                     db.createObjectStore('recipes', { keyPath: 'id', autoIncrement: true });
-                }
-                if (!db.objectStoreNames.contains('tags')) {
+                if (!db.objectStoreNames.contains('tags'))
                     db.createObjectStore('tags', { keyPath: 'id' });
-                }
-                if (!db.objectStoreNames.contains('assets')) {
+                if (!db.objectStoreNames.contains('assets'))
                     db.createObjectStore('assets', { keyPath: 'id' });
-                }
             },
         });
     }
@@ -90,6 +87,10 @@ class GitHubService {
             const content = await this.getFileContent(owner, repo, file.path);
             await db.put('assets', { id: file.path, content: content });
         }
+    }
+
+    public async uploadRecipe(owner: string, repo: string, recipe: Recipe): Promise<void> {
+        this.writeFileContent(owner, repo, `${recipe.id}.yaml`, yaml.dump(recipe), `Add recipe ${recipe.name}`);
     }
 
     private async getAllFiles(owner: string, repo: string, path = '', recursive = false): Promise<{ path: string }[]> {
